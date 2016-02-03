@@ -31,11 +31,11 @@ function [] = matlab_preprocessing()
     
     do_omni = true;
     
-    pp_step2 = true;
-    pp_step3 = true;
-    pp_step4 = true; %should always run if re-sorting by hour 
-    pp_step5 = true; %will overwrite if already exists
-    pp_step6 = true;
+    pp_step2 = false;
+    pp_step3 =false;
+    pp_step4 = false; %should always run if re-sorting by hour 
+    pp_step5 = true; save_removed = false; %saving the removed makes twice as long
+    pp_step6 = false; 
     
 	 %threshold values
     z_low = 5.8e4;
@@ -46,7 +46,7 @@ function [] = matlab_preprocessing()
 		pp_step2 = false;
 		pp_step3 = false;
 		pp_step4 = false; %should always run if re-sorting by hour 
-		pp_step5 = false; %you may need to puyt in new threshold limits.
+		pp_step5 = false; save_removed = false;%you may need to puyt in new threshold limits.
 		pp_step6 = true;
         
         z_low = -1.1;
@@ -82,7 +82,7 @@ function [] = matlab_preprocessing()
     
     if pp_step5
         tic
-        do_thresholding( data_dir, station, years, months, z_low, z_high );
+        do_thresholding( data_dir, station, years, months, z_low, z_high, save_removed );
         toc
     end
     

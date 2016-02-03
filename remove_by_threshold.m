@@ -1,11 +1,14 @@
 
-    function output = remove_by_threshold( input, z_low, z_high )
+
+
+    function [output,removed] = remove_by_threshold( input, z_low, z_high )
             % This is a simple threshold function that removes data too big or small
             % It checks Z values and whole field values.
             % It expects a whole slice, 720 rows, unknown no. of columns
             %It currentlty replaces out-of-threshold data with a row of
             %zeros but can return to just removing rows if necessry
             output = input;
+            removed = zeros(size(input));
 
             input_size = size(input);
             z_col = input_size(2);
@@ -19,6 +22,7 @@
 
             dels = input(:, z_col) > z_high | input(:,z_col) < z_low;
             output(dels,:) = zeros(sum(dels),input_size(2));
+            removed(dels,:) = input(dels,:);
             %output(dels,:) = [];
 
             tot_low = z_low;%5.95e4;
@@ -27,6 +31,7 @@
 
             dels = tot_field > tot_high | tot_field < tot_low;
             output(dels,:) = zeros(sum(dels),input_size(2));
+            removed(dels,:) = input(dels,:);
             %output(dels,:) = [];
 
     end
