@@ -54,9 +54,11 @@ function [output, output_info,hrs_out,dys_out,spd_out] = get_psd_medians( data_d
         end
     end
     
+    omni_size = size(unsorted_omni);
+    psds_size = size(unsorted_psds);
     
     % check these are correct
-    if length(unsorted_omni) ~= length(unsorted_psds)
+    if omni_size(2) ~= psds_size(3)
         error('Lengths of psds, omni do not match');
     end
     
@@ -73,7 +75,7 @@ function [output, output_info,hrs_out,dys_out,spd_out] = get_psd_medians( data_d
             [y m d this_speed_hours] = datevec( this_speed_omni(1,:) );
 
             % put info on this to go out
-            if max(size(this_speed_hours))>0
+            if min(size(this_speed_hours))>0
                 hrs_out = cat(1,hrs_out,this_speed_hours');
                 dys_out = cat(1,dys_out,datenum([y' m' d' zeros(size(y')) zeros(size(y')) zeros(size(y'))]));
                 spd_out = cat(1,spd_out,speed*ones(size(y')));
