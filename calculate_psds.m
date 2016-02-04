@@ -15,6 +15,7 @@ function [] = calculate_psds( data_dir, station, years, months, Fs)
     omni_all = omni_data;
     omni_size = size(omni_data);
 
+    %xyz_means = find_overall_mean(data_dir,station,years,months);
 
     % make the windowing function
     N = 720;
@@ -41,7 +42,8 @@ function [] = calculate_psds( data_dir, station, years, months, Fs)
             data_size = size(data);
             for hour = [1:data_size(3)]
                 for index = [1:data_size(2)]
-                    data(:,index,hour) = data(:,index,hour) - mean(data(:,index,hour));
+                    data(:,index,hour) = data(:,index,hour) - mean(data(:,index,hour)); %use mean of that column
+                    %data(:,index,hour) = data(:,index,hour)-xyz_means(index);
                 end
             end
                 
