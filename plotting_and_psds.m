@@ -9,9 +9,9 @@
 % 16-02-02 Plot information returned about the data
 
 function [] = plotting_and_psds()
-    
+
     station = 'GILL';
-    years = [1991:2004];
+    years = [1990:2004];
     months = [1:12];
     data_dir = strcat(pwd,sprintf('/data/'));
     
@@ -164,28 +164,29 @@ function [] = plotting_and_psds()
             title('Amount of data used to find each median');
             MLTs = {sprintf('MLT %d - %d',day_ranges(1,1),day_ranges(1,2)),sprintf('MLT %d - %d',day_ranges(2,1),day_ranges(2,2)),sprintf('MLT %d - %d',day_ranges(3,1),day_ranges(3,2)),sprintf('MLT %d - %d',day_ranges(4,1),day_ranges(4,2))};
             set(gca,'XTickLabel', MLTs);
+% % %             
+% % %             figure();
+% % %             [Y,X] = meshgrid(0:23,min(dys):max(dys));
+% % %             Z = NaN(max(dys)-min(dys)+1,24);
+% % %             %run through hrs, dys to put in real data
+% % %             for i =[1:length(hrs)]
+% % %                 xval = dys(i);
+% % %                 yval = hrs(i);
+% % %                 zval = spd(i);
+% % %                  
+% % %                 location = X == xval & Y == yval;
+% % %                 Z(location) = zval;
+% % %             end
+% % %             surf(X,Y,Z);
+% % %             view(2);
+% % %             shading flat;
+% % %             %view(90,0); %against yz plane
+% % %             set(gca,'ylim',[0 24.5]);
+% % %             %legend(SW_bins);
+% % %             datetick('x',22);
+% % %             title('Data used at each hour, with SW speed bin');
             
-            figure();
-            [Y,X] = meshgrid(0:23,min(dys):max(dys));
-            Z = NaN(max(dys)-min(dys)+1,24);
-            %run through hrs, dys to put in real data
-            for i =[1:length(hrs)]
-                xval = dys(i);
-                yval = hrs(i);
-                zval = spd(i);
-                 
-                location = X == xval & Y == yval;
-                Z(location) = zval;
-            end
-            surf(X,Y,Z);
-            view(2);
-            shading flat;
-            %view(90,0); %against yz plane
-            set(gca,'ylim',[0 24.5]);
-            %legend(SW_bins);
-            datetick('x',22);
-            title('Data used at each hour, with SW speed bin');
-            
+            plot_data_spread(dys,hrs,spd,'Data used at each hour, with SW speed bin');
                     
             %hold on;
             %scatter(dys,hrs,'.');
