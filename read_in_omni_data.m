@@ -14,6 +14,8 @@
 
 function output = read_in_omni_data( data_dir, station, years )
 
+    save_removed = false; %save data thrown out for being bad
+
     function output = convert_Kp( input );
         % Converts Kp values to 9-point system from OMNI format 0,3,7,10,13,17...
         output = zeros(size(input));
@@ -38,6 +40,7 @@ function output = read_in_omni_data( data_dir, station, years )
 		f_to_open = strcat(data_folder,'TEST_omni_all.txt');
 	end	
     f_to_save = strcat(data_folder,sprintf('%s_omni',station));
+    f_to_save2 = strcat(data_folder,sprintf('removed_%s_omni',station));
     temp_data = dlmread(f_to_open);
     
     
@@ -74,14 +77,26 @@ function output = read_in_omni_data( data_dir, station, years )
     mlts = read_in_mlt_midnight( data_dir, station );
     
     bad_data = output(:,2) == 9999 | output(:,3) == 9999 | output(:,4) == 9999;
+    if save_removed %check what we've thrown out
+        removed_dates = dates(bad_data,:);
+        removed = output(bad_data,:);
+    end
     dates(bad_data,:) = [];
     output(bad_data,:) = [];
+    
     
     for year = years
         this_year = dates(:,1) == year;
         mlts( mlts(:,1)== year, 2 );
         dates(:,4) = dates(:,4) - mlts( mlts(:,1)== year, 2 );
         dates(:,4) = floor(dates(:,4));
+        
+        if save_removed % have to do this here too!
+            this_year = removed_dates(:,1) == year;
+            mlts( mlts(:,1) == year, 2);
+            removed_dates(:,4) = removed_dates(:,4) - mlts( mlts(:,1) == year,2);
+            removed_dates(:,4) = floor(removed_dates(:,4));
+        end
     end
     
     output(:,1) = datenum( dates );
@@ -90,6 +105,11 @@ function output = read_in_omni_data( data_dir, station, years )
     
     omni_data = output;
     save( f_to_save, 'omni_data' ) ;
+    
+    if save_removed
+        removed(:,1) = datenum(removed_dates);
+        save(f_to_save2,'removed');
+    end
     
 
 end
