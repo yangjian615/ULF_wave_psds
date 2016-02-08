@@ -10,7 +10,7 @@
 % 16-02-03 Save and load files from slightly different location
 
 function [] = fix_moved_hours( data_dir, station )
-    disp('Glueing together hours split by converting to MLT');
+    disp('Glueing together hours split when converting to MLT');
     
     extra_data = [];
     for year = [2004:-1:1990]
@@ -28,32 +28,48 @@ function [] = fix_moved_hours( data_dir, station )
 
                 % first stick on the bits that were wrong
                 if min(size(extra_data)) > 0
+          
                     old_data_size = size(data);
                     extra_data_size = size(extra_data);
                     earlier_month_last_hour = data(:,:,old_data_size(3));
 
                     later_month_first_hour = extra_data(:,:,1);
 
-                    % check they add up properly
-                    num_later_entries = sum( sum(later_month_first_hour,2) ~= 0 );
-                    num_earlier_entries = sum( sum(earlier_month_last_hour,2) ~= 0 );
-                    split_slice_entries = num_earlier_entries + num_later_entries;
-                    if  split_slice_entries < 720
-                        later_month_entries = sprintf('The later month has %d nonzero entries its first hour, found from extra_data', num_later_entries);
-                        earlier_month_entries = sprintf('The earlier month has %d nonzero entries in its last hour',num_earlier_entries);
-                        disp(later_month_entries);
-                        disp(earlier_month_entries);
-                        disp('Not enough data in split slice, not glueing the very first slice');
-                    elseif split_slice_entries > 720
-                        later_month_entries = sprintf('The later month has %d nonzero entries its first hour, found from extra_data', num_later_entries);
-                        earlier_month_entries = sprintf('The earlier month has %d nonzero entries in its last hour',num_earlier_entries);
-                        disp(later_month_entries);
-                        disp(earlier_month_entries);
-                        disp('>>>TOO MUCH DATA, UNKNOWN REASON<<<');
-                    else %stick together the split-up end hour if it adds up ok
-                        temp = earlier_month_last_hour;
-                        temp(num_earlier_entries+1:720,:) = later_month_first_hour(1:num_later_entries,:);
-                        data(:,:,old_data_size(3)) = temp;
+                    
+                    %check they are the same hour
+                    [y m d h] = datevec(later_month_first_hour(1,1));
+                    later_hour = datenum([y m d h zeros(size(y)) zeros(size(y))]);
+                    
+                    [y m d h] = datevec(earlier_month_last_hour(1,1));
+                    earlier_hour = datenum([y m d h zeros(size(y)) zeros(size(y))]);
+                    %disp(datetime(datevec(later_hour))); disp(datetime(datevec(earlier_hour)));
+                    
+                    if later_hour ~= earlier_hour
+                        disp('>>> THEY ARE NOT THE SAME HOUR <<<');
+                        disp('Dont move this hour');
+                    else
+                    
+                        % check they add up properly
+                        num_later_entries = sum( sum(later_month_first_hour,2) ~= 0 );
+                        num_earlier_entries = sum( sum(earlier_month_last_hour,2) ~= 0 );
+                        split_slice_entries = num_earlier_entries + num_later_entries;
+                        if  split_slice_entries < 720
+                            later_month_entries = sprintf('The later month has %d nonzero entries its first hour, found from extra_data', num_later_entries);
+                            earlier_month_entries = sprintf('The earlier month has %d nonzero entries in its last hour',num_earlier_entries);
+                            disp(later_month_entries);
+                            disp(earlier_month_entries);
+                            disp('Not enough data in split slice, not glueing the very first slice');
+                        elseif split_slice_entries > 720
+                            later_month_entries = sprintf('The later month has %d nonzero entries its first hour, found from extra_data', num_later_entries);
+                            earlier_month_entries = sprintf('The earlier month has %d nonzero entries in its last hour',num_earlier_entries);
+                            disp(later_month_entries);
+                            disp(earlier_month_entries);
+                            disp('>>>TOO MUCH DATA, UNKNOWN REASON<<<');
+                        else %stick together the split-up end hour if it adds up ok
+                            temp = earlier_month_last_hour;
+                            temp(num_earlier_entries+1:720,:) = later_month_first_hour(1:num_later_entries,:);
+                            data(:,:,old_data_size(3)) = temp;
+                        end
                     end
 
                     %stick on all other (full) hour slices
