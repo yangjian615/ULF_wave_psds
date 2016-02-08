@@ -15,6 +15,7 @@
 function output = read_in_omni_data( data_dir, station, years )
 
     save_removed = false; %save data thrown out for being bad
+    do_mlt_conversion = true; %SHOULD ALMOST ALWAYS BE TRUE
 
     function output = convert_Kp( input );
         % Converts Kp values to 9-point system from OMNI format 0,3,7,10,13,17...
@@ -88,7 +89,9 @@ function output = read_in_omni_data( data_dir, station, years )
     for year = years
         this_year = dates(:,1) == year;
         mlts( mlts(:,1)== year, 2 );
-        dates(:,4) = dates(:,4) - mlts( mlts(:,1)== year, 2 );
+        if do_mlt_conversion
+            dates(:,4) = dates(:,4) - mlts( mlts(:,1)== year, 2 );
+        end
         dates(:,4) = floor(dates(:,4));
         
         if save_removed % have to do this here too!

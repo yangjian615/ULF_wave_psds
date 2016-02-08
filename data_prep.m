@@ -12,6 +12,8 @@
 
 function [] = data_prep(data_dir,station,years,months)
     disp('First bits in MATLAB - rotations etc');
+    do_mlt_conversion = true; %THESE SHOULD BOTH BE TRUE ALMOST ALWAYS
+    do_mag_rot = true;
     
     function output = rotate_to_mag_north( this_year, input, decs ) %so the X will point to magnetic north and Y will be perp to this
         % copied in from setup_C_data
@@ -57,13 +59,17 @@ function [] = data_prep(data_dir,station,years,months)
                 hr_col = 4;
 
                 % rotate those cols.
-                temp = data(:,rot_col_1:rot_col_2);
-                temp = rotate_to_mag_north( year, temp, decs );
-                data(:,rot_col_1:rot_col_2) = temp;
+                if do_mag_rot
+                    temp = data(:,rot_col_1:rot_col_2);
+                    temp = rotate_to_mag_north( year, temp, decs );
+                    data(:,rot_col_1:rot_col_2) = temp;
+                end
 
                 % convert to magnetic local time
-                to_subtract = mlts( mlts(:,1) == year,2 );
-                data(:,4) = data(:,4)-to_subtract;
+                if do_mlt_conversion
+                    to_subtract = mlts( mlts(:,1) == year,2 );
+                    data(:,4) = data(:,4)-to_subtract;
+                end
 
                 % add column just for datenum to the front, recalculate datevec
                 data_size = size(data);
@@ -74,6 +80,8 @@ function [] = data_prep(data_dir,station,years,months)
                 clearvars('temp');
                 data(:,2:7) = datevec( data(:,1) );
 
+                % sort so ordered by datenum
+                data = sortrows(data,1);
                 
                 save(f_to_save,'data');
             end
