@@ -101,12 +101,17 @@ function [output, output_info,hrs_out,dys_out,spd_out] = get_psd_medians( data_d
             end
         end
     else %just find medians of all of them 
+        disp('Not sorting by MLT or solar wind speed');
         meds(:,:) = median(unsorted_psds,3);
         data_size = size(unsorted_psds);
         output_info = data_size(3);
+        [y m d h] = datevec(unsorted_omni(1,:));
+        hrs_out = h;
+        days = [ y' m' d' zeros(size(y')) zeros(size(y')) zeros(size(y')) ];
+        dys_out = datenum(days);
     end
         
-            
+    
     output = meds;
             
     

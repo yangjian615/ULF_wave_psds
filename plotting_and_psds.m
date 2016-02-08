@@ -10,14 +10,14 @@
 
 function [] = plotting_and_psds()
 
-    station = 'GILL';
-    years = [1990:2004];
-    months = [1:12];
+    station = 'SP01';
+    years = [2001];%[1990:2004];
+    months = [11];%[1:12];
     data_dir = strcat(pwd,sprintf('/data/'));
     
-    calc_psds = true;%true;
+    calc_psds = false;%true;
     find_medians = true;
-    sort_medians = true; % do we want them sorted by sector and SW speed?
+    sort_medians = false; % do we want them sorted by sector and SW speed?
     plot_medians = true;
     plot_info = true; %tell us how much data we used!
     
@@ -30,6 +30,10 @@ function [] = plotting_and_psds()
     freqs = (fs/(N))*n*(1e3); %in mHz 
     day_ranges = [ 3, 9 ; 9, 15; 15, 21 ;21,3];
     
+    axis_lim = [0.75,14,0.4e-4,0.9e3];%[0.9,11,0.9e-4, 0.9e3];
+    xlabel_words = 'Freq, mHz';
+    ylabel_words = 'PSD, (nT)^2 / mHz';
+    
     SW_bins = {'v < 300 km/s', '300-400 km/s','400-500 km/s', '500-600 km/s','600-700 km/s', 'v > 700 km/s'};
     output_info = [];
     
@@ -41,15 +45,16 @@ function [] = plotting_and_psds()
     if ~sort_medians
         if find_medians
             disp('Finding unsorted medians over requested data');
-            [meds, output_info] = get_psd_medians(data_dir,station,years, months,zeros(4,2));
+            [meds, output_info,hrs,dys] = get_psd_medians(data_dir,station,years, months,zeros(4,2));
         end
         
         if plot_medians
-            plot(freqs(1:plot_end),meds(:,1));
-            xlabel_words = 'Freq, mHz';
+            loglog(freqs(1:plot_end),meds(:,1));
             xlabel(xlabel_words);
-            title('TEST medians of xcoord');
-            disp('Not finished code yet for plotting median PSD values');
+            title_words = sprintf('%s medians of x co-ord',station);
+            title(title_words);
+            axis(axis_lim);
+            disp('Only rough code completed for plotting unsorted median PSD values');
         end
         
         if plot_info 
@@ -59,6 +64,8 @@ function [] = plotting_and_psds()
             title('Amount of data used to find each median');
             %MLTs = {sprintf('MLT %d - %d',day_ranges(1,1),day_ranges(1,2)),sprintf('MLT %d - %d',day_ranges(2,1),day_ranges(2,2)),sprintf('MLT %d - %d',day_ranges(3,1),day_ranges(3,2)),sprintf('MLT %d - %d',day_ranges(4,1),day_ranges(4,2))};
             %set(gca,'XTickLabel', MLTs);
+            
+            plot_data_spread(dys,hrs,ones(size(hrs)),'Days used');
         end
         
     elseif sort_medians
@@ -83,9 +90,6 @@ function [] = plotting_and_psds()
             cols = 6;
             space = 0;
 
-            axis_lim = [0.75,14,0.4e-4,0.9e3];%[0.9,11,0.9e-4, 0.9e3];
-            xlabel_words = 'Freq, mHz';
-            ylabel_words = 'PSD, (nT)^2 / mHz';
 
             plot_posns = [ 14 7 2 9;17 10 5 12]; % the Xs for each day range, then the Ys
             ax = getCustomAxesPos(rows,cols, plot_posns,space);
