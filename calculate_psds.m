@@ -10,7 +10,7 @@
 % N instead
 
 function [] = calculate_psds( data_dir, station, years, months, Fs)
-    
+
     load(strcat(data_dir,sprintf('%s_omni',station)));
     omni_all = omni_data;
     omni_size = size(omni_data);
@@ -21,7 +21,7 @@ function [] = calculate_psds( data_dir, station, years, months, Fs)
     N = 720;
     n = [0:N-1];
     w = 0.5*(1-cos(2*pi*n/(N-1)));
-    W = N*sum(w.^2);
+    %W = N*sum(w.^2);
     
     % FIX WHICH TO USE
     W = sum(w.^2);
@@ -38,15 +38,16 @@ function [] = calculate_psds( data_dir, station, years, months, Fs)
             % remove unnecessary rows
             data(:,1:7,:) = [];
             
-            %subtract the mean
+            %subtract the mean and apply window
             data_size = size(data);
             for hour = [1:data_size(3)]
                 for index = [1:data_size(2)]
                     data(:,index,hour) = data(:,index,hour) - mean(data(:,index,hour)); %use mean of that column
                     %data(:,index,hour) = data(:,index,hour)-xyz_means(index);
+                    data(:,index,hour) = data(:,index,hour) .* w';
                 end
             end
-                
+            
             
             % calculate FFT and PSD
             data_ft = fft(data,[],1);
