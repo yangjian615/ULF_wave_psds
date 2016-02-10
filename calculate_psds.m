@@ -21,10 +21,10 @@ function [] = calculate_psds( data_dir, station, years, months, Fs)
     N = 720;
     n = [0:N-1];
     w = 0.5*(1-cos(2*pi*n/(N-1)));
-    %W = N*sum(w.^2);
     
     % FIX WHICH TO USE
-    W = sum(w.^2);
+    %W = sum(w.^2);
+    W = N*sum(w.^2); % this one for change attempt
     
     
     for year = years
@@ -52,7 +52,8 @@ function [] = calculate_psds( data_dir, station, years, months, Fs)
             % calculate FFT and PSD
             data_ft = fft(data,[],1);
             data_ft(((N/2)+1):N,:,:) = [];
-            hr_psds = (Fs/(N*W))*2*(abs(data_ft)).^2;
+            %hr_psds = (Fs/(N*W))*2*(abs(data_ft)).^2;
+            hr_psds = (2/(Fs*W))*(abs(data_ft)).^2;
             
             
             save(f_to_save,'hr_psds','mini_omni');
