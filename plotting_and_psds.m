@@ -10,27 +10,30 @@
 
 function [] = plotting_and_psds()
 
-    station = 'SP01';
-    years = [2001];%[1990:2004];
-    months = [11];%[1:12];
+    figure();
+    station = 'GILL';
+    years = [1990:2004];
+    months = [1:12];
     data_dir = strcat(pwd,sprintf('/data/'));
     
-    calc_psds = false;%true;
+    calc_psds = true;
     find_medians = true;
-    sort_medians = false; % do we want them sorted by sector and SW speed?
+    sort_medians = true; % do we want them sorted by sector and SW speed?
     plot_medians = true;
-    plot_info = true; %tell us how much data we used!
+    plot_info = false; %tell us how much data we used!
     
     %set up variables
     ts = 5; %5s between samples
-    fs = 1/ts; 
     N = 720; %no. samples in each slice (an hour)
+    f_max = 1/ts; 
+    f_nyquist = f_max/2; %Nyquist frequency
+    f_res = 1/(N*ts); %frequency resolution
     n = [0:N];
     plot_end = (N/2);
-    freqs = (fs/(N))*n*(1e3); %in mHz 
+    freqs = (f_max/(N))*n*(1e3); %in mHz 
     day_ranges = [ 3, 9 ; 9, 15; 15, 21 ;21,3];
     
-    axis_lim = [0.75,14,0.4e-4,0.9e3];%[0.9,11,0.9e-4, 0.9e3];
+    axis_lim = [0.75,14,0.5,1.5e5];%[0.75,14,0.4e-4,0.9e3];
     xlabel_words = 'Freq, mHz';
     ylabel_words = 'PSD, (nT)^2 / mHz';
     
@@ -39,7 +42,9 @@ function [] = plotting_and_psds()
     
     if calc_psds        
         disp('Calculating PSDs');
-        calculate_psds(data_dir, station, years, months,fs );
+        use_window = false;
+        idl_scaling_on = true;
+        calculate_psds(data_dir, station, years, months,f_res,idl_scaling_on,use_window);
     end
     
     if ~sort_medians
@@ -54,6 +59,7 @@ function [] = plotting_and_psds()
             title_words = sprintf('%s medians of x co-ord',station);
             title(title_words);
             axis(axis_lim);
+            %axis([0.75,14,-inf,inf]);
             disp('Only rough code completed for plotting unsorted median PSD values');
         end
         
@@ -116,8 +122,8 @@ function [] = plotting_and_psds()
             for j = [1:numel(plot_posns)]
                 sector =  ceil(j/2);
                 this_ax = ax(plot_posns(j));
-                x1 = 1;
-                y1 = 1.5e-4;
+                x1 = axis_lim(1)+0.1*log(axis_lim(2)-axis_lim(1));
+                y1 = axis_lim(3)+0.1*log(axis_lim(4)-axis_lim(3));
                 title_words = ' ';
                 halign = ' ';
 
