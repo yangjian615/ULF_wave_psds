@@ -71,6 +71,11 @@ function [] = data_prep(data_dir,station,years,months)
                     data(:,4) = data(:,4)-to_subtract;
                 end
 
+                % make sure seconds are all multiples of 5 - sometimes they
+                % reset it funny
+                data(:,6) = data(:,6) - mod(data(:,6),5);
+ 
+                
                 % add column just for datenum to the front, recalculate datevec
                 data_size = size(data);
                 temp = nan( data_size(1), data_size(2)+1 );
