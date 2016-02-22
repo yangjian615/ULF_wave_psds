@@ -29,13 +29,13 @@ function [] = matlab_preprocessing()
     months = [1:12];
     data_dir = strcat(pwd,sprintf('/data/'));
     
-    do_omni = true;
+    do_omni = false;
     
-    pp_step2 = false;
-    pp_step3 =false;
-    pp_step4 = false; %should always run if re-sorting by hour 
-    pp_step5 = true; save_removed = false; %saving the removed makes twice as long
-    pp_step6 = false; 
+    do_prep = false;
+    do_thresh = true; interpolate_missing = false; save_removed = false; %saving the removed makes twice as long
+    do_hr_sort = true;
+    do_hr_fix = true; %should always run if re-sorting by hour 
+    do_omni_remove = true; 
     
 	 %threshold values
     z_low = 5.8e4;
@@ -43,11 +43,11 @@ function [] = matlab_preprocessing()
     
 	if strcmp(station,'TEST')
 		do_omni = true;	
-		pp_step2 = false;
-		pp_step3 = false;
-		pp_step4 = false; %should always run if re-sorting by hour 
-		pp_step5 = false; save_removed = false;%you may need to puyt in new threshold limits.
-		pp_step6 = true;
+		do_prep = false;
+		do_thresh = false; interpolate_missing = false; save_removed = false;%you may need to puyt in new threshold limits.
+		do_hr_sort = false;
+		do_hr_fix = false; %should always run if re-sorting by hour 
+		do_omni_remove = true;
         
         z_low = -1.1;
         z_high = 1.1;
@@ -55,6 +55,7 @@ function [] = matlab_preprocessing()
 		
     
    
+    tic
     
     if do_omni
         tic
@@ -62,35 +63,36 @@ function [] = matlab_preprocessing()
         toc
     end
     
-    if pp_step2 
+    if do_prep 
         tic
         data_prep( data_dir, station, years, months );
         toc
     end
     
-    if pp_step3
+    if do_thresh
+        tic
+        do_thresholding( data_dir, station, years, months, z_low, z_high, interpolate_missing, save_removed );
+        toc
+    end
+    
+    if do_hr_sort
         tic
         sort_by_hour( data_dir, station, years, months );
         toc
     end
     
-    if pp_step4
+    if do_hr_fix
         tic
         fix_moved_hours( data_dir, station );
         toc
     end
     
-    if pp_step5
-        tic
-        do_thresholding( data_dir, station, years, months, z_low, z_high, save_removed );
-        toc
-    end
-    
-    if pp_step6
+    if do_omni_remove
         tic
         remove_bad_omni( data_dir, station, years, months );
         toc
     end
 
+    toc
 
 end

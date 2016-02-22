@@ -22,7 +22,7 @@ function [] = sort_by_hour( data_dir, station, years, months  )
         for month = months
             %tic
             temp_data(:,:,:) = 0;
-            f_to_load = strcat(data_dir,sprintf('/prepped/%s_%d_%d',station,year,month));
+            f_to_load = strcat(data_dir,sprintf('/thresholded/%s_%d_%d',station,year,month));
             f_to_save = strcat(data_dir,sprintf('/sorted1/%s_%d_%d',station,year,month));
             
             

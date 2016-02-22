@@ -21,7 +21,7 @@ function [] = remove_bad_omni( data_dir,station,years,months)
             mini_omni = [];
             word_temp = sprintf('remove_bad_omni: Doing year %d, month %d',year, month);
             disp(word_temp);
-            f_to_open = strcat(data_dir,sprintf('/sorted3/%s_%d_%d',station,year,month));
+            f_to_open = strcat(data_dir,sprintf('/sorted2/%s_%d_%d',station,year,month));
             f_to_save = strcat(data_dir,sprintf('/ready/%s_%d_%d',station,year,month));
             load(f_to_open);
             
