@@ -59,7 +59,7 @@ function [] = do_thresholding( data_dir, station, years, months, z_low_lim, z_hi
                     d = 0*basis;
                     h = 0*basis;
                     min = 0*basis;
-                    s = data(1,7)+[0:max_month_size-1]'*5; %have to have every second not every five for mismatches when resetting data
+                    s = [0:max_month_size-1]'*5; %have to have every second not every five for mismatches when resetting data
                     
 
                     % stickk all the datenums together, ones from data
@@ -83,10 +83,11 @@ function [] = do_thresholding( data_dir, station, years, months, z_low_lim, z_hi
                     while sum(isnan(fixed(cut_off_index,:))) >0 %will break as soon as bigger than fixed
                         cut_off_index = cut_off_index +1;
                     end
-                    while sum(isnan(fixed(max_month_size,:))) > 0
-                        max_month_size = max_month_size-1;
+                    fixed_length = max_month_size;
+                    while sum(isnan(fixed(fixed_length,:))) > 0
+                        fixed_length = fixed_length - 1;
                     end
-                    fixed = fixed(cut_off_index:max_month_size,:);
+                    fixed = fixed(cut_off_index:fixed_length,:);
                     
                     % find bad places
                     good_data = ~isnan(fixed(:,8:10));
@@ -94,10 +95,10 @@ function [] = do_thresholding( data_dir, station, years, months, z_low_lim, z_hi
                     
                     
                     % see whether wort attempting to fix
-                    for i = [1:floor(max_month_size/720)]
-                        endpoint = min( [720*(i) max_month_size] );
+                    for i = [1:floor(fixed_length/720)]
+                        endpoint = min( [720*(i) fixed_length] );
                         hr_indices = [720*(i-1)+1:endpoint];
-                        if sum(sum(try_fix(hr_indices,:)))
+                        if sum(sum(try_fix(hr_indices,:))) > 30
                             try_fix(hr_indices,:) = false;
                         end
                     end
@@ -105,13 +106,13 @@ function [] = do_thresholding( data_dir, station, years, months, z_low_lim, z_hi
                     disp(sprintf('Trying to fix %d data points this month',sum(sum(try_fix))));
                     
        
-                    % fix
+                    % fix it
                     for i = [1:3]
                         col = i+7;
                         this_try_fix = try_fix(:,i);
                         this_good_data = good_data(:,i);
-                        fixed(this_try_fix,8:10) = interp1(indices(this_good_data),fixed(this_good_data,8:10),indices(this_try_fix));
-                        fixed(this_try_fix,2:7) = datevec(fixed(this_try_fix,1));
+                        fixed(this_try_fix,col) = interp1(indices(this_good_data),fixed(this_good_data,col),indices(this_try_fix));
+                        fixed(this_try_fix,2:7) = datevec(fixed(this_try_fix,1)); 
                     end
 
                     
