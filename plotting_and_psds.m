@@ -10,13 +10,13 @@
 
 function [] = plotting_and_psds()
 
-    figure();
+    %figure();
     station = 'GILL';
     years = [1990:2004];
     months = [1:12];
     data_dir = strcat(pwd,sprintf('/data/'));
     
-    calc_psds = true;
+    calc_psds = true; 
     find_medians = true;
     sort_medians = true; % do we want them sorted by sector and SW speed?
     plot_medians = true;
@@ -33,18 +33,16 @@ function [] = plotting_and_psds()
     freqs = (f_max/(N))*n*(1e3); %in mHz 
     day_ranges = [ 3, 9 ; 9, 15; 15, 21 ;21,3];
     
-    axis_lim = [0.75,14,0.5,1.5e5];%[0.75,14,0.4e-4,0.9e3];
+    axis_lim = [0.75,14,-inf,inf];%[0.75,14,0.5,1.5e5];%[0.75,14,0.4e-4,0.9e3];
     xlabel_words = 'Freq, mHz';
-    ylabel_words = 'PSD, (nT)^2 / mHz';
+    ylabel_words = 'PSD, (nT)^2'; % / mHz';
     
     SW_bins = {'v < 300 km/s', '300-400 km/s','400-500 km/s', '500-600 km/s','600-700 km/s', 'v > 700 km/s'};
     output_info = [];
     
     if calc_psds        
         disp('Calculating PSDs');
-        use_window = false;
-        idl_scaling_on = true;
-        calculate_psds(data_dir, station, years, months,f_res,idl_scaling_on,use_window);
+        calculate_psds( data_dir, station, years, months );
     end
     
     if ~sort_medians
@@ -153,20 +151,6 @@ function [] = plotting_and_psds()
 
         end
         if plot_info
-%             figure();
-%             for i = [1:4]
-%                 subplot(2,2,i);
-%                 bar(output_info(i,:));
-%                 title_words = sprintf('MLT %d - %d',day_ranges(i,1),day_ranges(i,2));
-%                 title(title_words);
-%                 set(gca,'ylim',[0,round(max(max(output_info)),1,'significant')]);
-%                 set(gca,'XTickLabel', SW_bins);
-%                 set(gca,'XTickLabelRotation',45);
-%                 %ax = axis; 
-%                 %ax.XTickLabel = SW_bins; Is this the version you'd use for
-%                 %later releases?
-%                 %ax.XTickLabelRotation=45;
-%             end
             
             figure();
             bar(output_info,'grouped');
@@ -174,38 +158,9 @@ function [] = plotting_and_psds()
             title('Amount of data used to find each median');
             MLTs = {sprintf('MLT %d - %d',day_ranges(1,1),day_ranges(1,2)),sprintf('MLT %d - %d',day_ranges(2,1),day_ranges(2,2)),sprintf('MLT %d - %d',day_ranges(3,1),day_ranges(3,2)),sprintf('MLT %d - %d',day_ranges(4,1),day_ranges(4,2))};
             set(gca,'XTickLabel', MLTs);
-% % %             
-% % %             figure();
-% % %             [Y,X] = meshgrid(0:23,min(dys):max(dys));
-% % %             Z = NaN(max(dys)-min(dys)+1,24);
-% % %             %run through hrs, dys to put in real data
-% % %             for i =[1:length(hrs)]
-% % %                 xval = dys(i);
-% % %                 yval = hrs(i);
-% % %                 zval = spd(i);
-% % %                  
-% % %                 location = X == xval & Y == yval;
-% % %                 Z(location) = zval;
-% % %             end
-% % %             surf(X,Y,Z);
-% % %             view(2);
-% % %             shading flat;
-% % %             %view(90,0); %against yz plane
-% % %             set(gca,'ylim',[0 24.5]);
-% % %             %legend(SW_bins);
-% % %             datetick('x',22);
-% % %             title('Data used at each hour, with SW speed bin');
             
             plot_data_spread(dys,hrs,spd,'Data used at each hour, with SW speed bin');
                     
-            %hold on;
-            %scatter(dys,hrs,'.');
-            %hold on;
-            %mesh(min(hrs):max(hrs),0:23);
-%             tri = delaunay(dys,hrs);
-%             trisurf(tri,dys,hrs,spd);
-%             %surf(dys,hrs,spd);
-%             view(2);
     end
     
 end
