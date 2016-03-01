@@ -63,12 +63,16 @@ function output = read_in_omni_data( data_dir, station, years )
 		
 	
     our_years = y >= 1990 & y <= 2004;
+	
+	if length(our_years) ~= length(temp_data)
+		error('>>> Stuff is wrong size<<<');
+	end
     
     dates = dates(our_years,:);
     temp_data = temp_data(our_years,:);
     output = zeros(sum(our_years),4);
     
-    %output(:,1) = datenum([y ones(size(y)) d h zeros(size(y)) zeros(size(y)) ]);
+    % fill i the data part
     output(:,2) = temp_data(:,25); %the SW speed
     output(:,3) = temp_data(:,39); % the Kp value, although not mapped properly over yet.
     output(:,4) = temp_data(:,36); % the electric field mV/m, -V(km/s) * Bz (nT; GSM) * 10**-3 
@@ -77,7 +81,7 @@ function output = read_in_omni_data( data_dir, station, years )
     
     mlts = read_in_mlt_midnight( data_dir, station );
     
-    bad_data = output(:,2) == 9999 | output(:,3) == 9999 | output(:,4) == 9999;
+    bad_data = output(:,2) >= 9998;% | output(:,3) == 9999 | output(:,4) == 9999;
     if save_removed %check what we've thrown out
         removed_dates = dates(bad_data,:);
         removed = output(bad_data,:);
@@ -85,12 +89,11 @@ function output = read_in_omni_data( data_dir, station, years )
     dates(bad_data,:) = [];
     output(bad_data,:) = [];
     
-    
+    % do convrsion and sort out datenums for output
     for year = years
         this_year = dates(:,1) == year;
-        mlts( mlts(:,1)== year, 2 );
         if do_mlt_conversion
-            dates(:,4) = dates(:,4) - mlts( mlts(:,1)== year, 2 );
+            dates(this_year,4) = dates(this_year,4) - mlts( mlts(:,1)== year, 2 );
         end
         dates(:,4) = floor(dates(:,4));
         
