@@ -9,7 +9,6 @@
 
 % Also removes any incomplete slices.
 
-
 function [] = do_thresholding( data_dir, station, years, months, z_low_lim, z_high_lim,interpolate_missing, save_removed )
     disp('Thresholding data');
 
@@ -46,7 +45,7 @@ function [] = do_thresholding( data_dir, station, years, months, z_low_lim, z_hi
                 % interpolate anything missing
                 if interpolate_missing
                     disp('Attempting to interpolate missing data');
-                    max_month_size = 32*24*60*60/5; %got to start earlier as rotated to MLT, also have to have every second not just every five due to data
+                    max_month_size = (31*24+7)*60*60/5; %got to start earlier as rotated to MLT, also have to have every second not just every five due to data
                     to_fix = nan(max_month_size+num_rows,10);
                     fixed = nan(max_month_size,10);
                     
@@ -54,16 +53,15 @@ function [] = do_thresholding( data_dir, station, years, months, z_low_lim, z_hi
                     indices = [1:max_month_size];
                     
                     basis = ones(max_month_size,1);
-                    y = year*basis;
-                    m = month*basis;
-                    d = 0*basis;
-                    h = 0*basis;
+                    y = data(1,2)*basis;
+                    m = data(1,3)*basis;
+                    d = data(1,4)*basis;
+                    h = data(1,5)*basis;
                     min = 0*basis;
                     s = [0:max_month_size-1]'*5; %have to have every second not every five for mismatches when resetting data
                     
 
-                    % stickk all the datenums together, ones from data
-                    % first
+                    % stickk all the datenums together, ones from data first
                     to_fix(num_rows+1:num_rows+max_month_size,1) = datenum([y m d h min s]);
                     to_fix = sortrows(to_fix,1);
                     
