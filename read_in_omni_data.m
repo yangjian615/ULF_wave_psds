@@ -74,14 +74,18 @@ function output = read_in_omni_data( data_dir, station, years )
     
     % fill i the data part
     output(:,2) = temp_data(:,25); %the SW speed
-    output(:,3) = temp_data(:,39); % the Kp value, although not mapped properly over yet.
-    output(:,4) = temp_data(:,36); % the electric field mV/m, -V(km/s) * Bz (nT; GSM) * 10**-3 
+    output(:,3) = temp_data(:,29); % the flow pressure
+    output(:,4) = temp_data(:,24); % the proton density
     
-    % Bz(GSM) is towards magnetic north on mapped plane.
     
     mlts = read_in_mlt_midnight( data_dir, station );
     
-    bad_data = output(:,2) >= 9998;% | output(:,3) == 9999 | output(:,4) == 9999;
+	% sort out bad data
+    bad_data = output(:,2) >= 9998; 
+	bad_data = bad_data | output(:,3) >= 99;
+	bad_data = bad_data | output(:,3) == 0; %CHECK THIS WITH MATT
+	bad_data = bad_data | output(:,4) >= 999;
+	bad_data = bad_data | output(:,4) == 0; %CHECK THIS WITH MATT
     if save_removed %check what we've thrown out
         removed_dates = dates(bad_data,:);
         removed = output(bad_data,:);
@@ -99,15 +103,14 @@ function output = read_in_omni_data( data_dir, station, years )
         
         if save_removed % have to do this here too!
             this_year = removed_dates(:,1) == year;
-            mlts( mlts(:,1) == year, 2);
-            removed_dates(:,4) = removed_dates(:,4) - mlts( mlts(:,1) == year,2);
+            removed_dates(this_year,4) = removed_dates(this_year,4) - mlts( mlts(:,1) == year,2);
             removed_dates(:,4) = floor(removed_dates(:,4));
         end
     end
     
     output(:,1) = datenum( dates );
     
-    output(:,3) = convert_Kp( output(:,3) );
+    %output(:,3) = convert_Kp( output(:,3) );
     
     omni_data = output;
     save( f_to_save, 'omni_data' ) ;
