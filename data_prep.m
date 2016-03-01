@@ -69,13 +69,14 @@ function [] = data_prep(data_dir,station,years,months)
                 if do_mlt_conversion
                     to_subtract = mlts( mlts(:,1) == year,2 );
                     data(:,4) = data(:,4)-to_subtract;
+					data(:,1:6) = datevec(datenum(data(:,1:6)));
                 end
 
                 % make sure seconds are all multiples of 5 - sometimes they
                 % reset it funny
                 data(:,6) = data(:,6) - mod(data(:,6),5);
  
-                
+ 
                 % add column just for datenum to the front, recalculate datevec
                 data_size = size(data);
                 temp = nan( data_size(1), data_size(2)+1 );
@@ -84,10 +85,11 @@ function [] = data_prep(data_dir,station,years,months)
                 data = temp;
                 clearvars('temp');
                 data(:,2:7) = datevec( data(:,1) );
-
+			
                 % sort so ordered by datenum
                 data = sortrows(data,1);
                 
+				
                 save(f_to_save,'data');
             end
         end
