@@ -72,12 +72,13 @@ function [] = fix_moved_hours( data_dir, station )
                         end
                     end
 
-                    %stick on all other (full) hour slices
-                    temp_data = zeros(720,10,old_data_size(3)+extra_data_size(3)-1);
-                    temp_data(:,:,1:old_data_size(3)) = data;
-                    temp_data(:,:,old_data_size(3)+1 : old_data_size(3) + extra_data_size(3) -1) = extra_data(:,:,2:extra_data_size(3));
-
-                    data = temp_data;
+                    %stick on all other (full) hour slices if there are any
+					if length(extra_data_size) > 2
+						temp_data = zeros(720,10,old_data_size(3)+extra_data_size(3)-1);
+						temp_data(:,:,1:old_data_size(3)) = data;
+						temp_data(:,:,old_data_size(3)+1 : old_data_size(3) + extra_data_size(3) -1) = extra_data(:,:,2:extra_data_size(3));
+						data = temp_data;
+					end
                 else
                     disp('Nothing to move between files');
                 end
