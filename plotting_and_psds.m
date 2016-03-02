@@ -8,19 +8,18 @@
 % 16-02-01 MOre stuff returned from get_psd_medians. Not using it yet.
 % 16-02-02 Plot information returned about the data
 
-function [] = plotting_and_psds()
+function [] = plotting_and_psds(data_dir,station,years,months,calc_psds,sort_type,plot_info)
 
-    %figure();
-    station = 'GILL';
-    years = [1990:2004];
-    months = [1:12];
-    data_dir = strcat(pwd,sprintf('/data/'));
+
+    % station = 'GILL';
+    % years = [1990:2004];
+    % months = [1:12];
+    % data_dir = strcat(pwd,sprintf('/data/'));
     
-    calc_psds = true; 
-    find_medians = true;
-    sort_medians = true; % do we want them sorted by sector and SW speed?
+    % calc_psds = false; 
+	% sort_type = 'speed';
     plot_medians = true;
-    plot_info = false; %tell us how much data we used!
+    % plot_info = false; %tell us how much data we used!
     
     %set up variables
     ts = 5; %5s between samples
@@ -33,23 +32,24 @@ function [] = plotting_and_psds()
     freqs = (f_max/(N))*n*(1e3); %in mHz 
     day_ranges = [ 3, 9 ; 9, 15; 15, 21 ;21,3];
     
-    axis_lim = [0.75,14,-inf,inf];%[0.75,14,0.5,1.5e5];%[0.75,14,0.4e-4,0.9e3];
+    axis_lim = [0.75,14,-inf,inf];%[0.75,14,0,1.5e5];%[0.75,14,0.4e-4,0.9e3];
     xlabel_words = 'Freq, mHz';
     ylabel_words = 'PSD, (nT)^2'; % / mHz';
     
-    SW_bins = {'v < 300 km/s', '300-400 km/s','400-500 km/s', '500-600 km/s','600-700 km/s', 'v > 700 km/s'};
     output_info = [];
+	disp(sprintf('Plotting and psds options: recalculate PSDs %d, sort type %s, plot the data spread %d',calc_psds, sort_type,plot_info));
+	
     
     if calc_psds        
         disp('Calculating PSDs');
         calculate_psds( data_dir, station, years, months );
     end
     
-    if ~sort_medians
-        if find_medians
-            disp('Finding unsorted medians over requested data');
-            [meds, output_info,hrs,dys] = get_psd_medians(data_dir,station,years, months,zeros(4,2));
-        end
+    if strcmp(sort_type,'no_sort')
+
+		disp('Finding unsorted medians over requested data');
+		[meds, output_info,hrs,dys] = get_psd_medians(data_dir,station,years, months,zeros(4,2),sort_type);
+
         
         if plot_medians
             loglog(freqs(1:plot_end),meds(:,1));
@@ -71,18 +71,18 @@ function [] = plotting_and_psds()
             
             plot_data_spread(dys,hrs,ones(size(hrs)),'Days used');
         end
-        
-    elseif sort_medians
-    
-        if find_medians
-            disp('Finding medians over requested data');
-            [meds, output_info,hrs,dys,spd] = get_psd_medians(data_dir,station,years, months,day_ranges);
-        end
+		
+    elseif strcmp(sort_type,'speed') | strcmp(sort_type,'pressure')
 
+		disp('Finding medians over requested data');
+		[meds,bins,output_info,hrs,dys,spd] = get_psd_medians(data_dir,station,years, months,day_ranges,sort_type);
+
+		
         if plot_medians
 
             num_meds = size(meds);
 
+			% set up for the big plot
             h = figure('units','normalized','outerposition',[0 0 1 1]);
             set(h,'units','pixels','Position',[50, 100, 1100, 800]);
             set(h,'PaperType','a4');
@@ -93,39 +93,57 @@ function [] = plotting_and_psds()
             rows = 3;
             cols = 6;
             space = 0;
-
-
-            plot_posns = [ 14 7 2 9;17 10 5 12]; % the Xs for each day range, then the Ys
-            ax = getCustomAxesPos(rows,cols, plot_posns,space);
+			
+            plot_posns = [14 7 2 9 17 10 5 12]; % Title location, then X posns for each sector, then Y posns for each sector
+			ax = getCustomAxesPos(rows,cols, plot_posns,space);
 
             for i = [1 2] %each index X, Y
-                for sector = [1:num_meds(3)]              
-                    plot_pos = plot_posns(i,sector);
+                for sector = [1:num_meds(3)]                    
+                    plot_pos = plot_posns(sector+(i-1)*num_meds(3));
 
-                    for SW_bin = [1 : num_meds(4)] 
-                        these_meds = meds(1:plot_end,i,sector,SW_bin);
+                    for each_bin = [1 : num_meds(4)] 
+                        these_meds = meds(1:plot_end,i,sector,each_bin);
                         loglog(ax(plot_pos),freqs(1:plot_end),these_meds);
                         hold(ax(plot_pos),'on');
 
                     end
-                    %plot(ax(plot_pos),10,1e-4,'o');
                 end
             end
-            legend(ax(plot_posns(2,2)),SW_bins(1:num_meds(4)),'Position',[0.75 0.11 0.15 0.15]);%'Location','bestoutside');
+			
+			
+			%set up the legend
+			bin_units = {};
+			if strcmp(sort_type,'speed')
+				bin_units = 'km/s';
+			elseif strcmp(sort_type,'pressure')
+				bin_units = '???';
+			end
+			the_bins{1} = strcat('< ',num2str(bins(1)),bin_units); 
+			for k = [1:length(bins)-1]
+				the_bins{k+1} = strcat(num2str(bins(k)),' - ',num2str(bins(k+1)),bin_units);
+			end
+			the_bins{length(bins)+1} = strcat('> ',num2str(bins(length(bins))),bin_units);			
+			legend(ax(plot_posns(length(plot_posns))),the_bins,'Position',[0.75 0.11 0.15 0.15]);%'Location','bestoutside');
             legend('boxoff')
-
+			
+			% not quite a title!
+			title_str = {sprintf('Median PSDs for %s',station) 'years:' num2str(years) 'months:' num2str(months) 'binned by:' sort_type};
+			annotation('textbox',[0.05 0.7 0.2 0.2],'String',title_str);%,'FitBoxToText','on');
+			
 
             % label the graphs
-
             for j = [1:numel(plot_posns)]
-                sector =  ceil(j/2);
+                sector =  mod(j,4);
+				if sector == 0
+					sector = 4;
+				end
                 this_ax = ax(plot_posns(j));
                 x1 = axis_lim(1)+0.1*log(axis_lim(2)-axis_lim(1));
                 y1 = axis_lim(3)+0.1*log(axis_lim(4)-axis_lim(3));
                 title_words = ' ';
                 halign = ' ';
 
-                if mod(j,2) == 1
+                if ceil((j)/4) == 1
                     component = 'X';
                     title_words = 'Day sector:';
                     halign = 'center';
@@ -146,8 +164,9 @@ function [] = plotting_and_psds()
                 text(x1,y1,component,'Parent',this_ax);
                 title(this_ax,title_words,'HorizontalAlignment',halign);
 
-                %saveas(h,'most_recent','pdf');
             end
+			
+			%saveas(h,sprintf('16-03-02_%s_%s',num2str(years),sort_type),'pdf');
 
         end
         if plot_info
@@ -160,6 +179,7 @@ function [] = plotting_and_psds()
             set(gca,'XTickLabel', MLTs);
             
             plot_data_spread(dys,hrs,spd,'Data used at each hour, with SW speed bin');
+		end
                     
     end
     
