@@ -34,11 +34,17 @@ function [] = do_thresholding( data_dir, station, years, months, z_low_lim, z_hi
                 removed = zeros(size(data));
                 %end
                 
-                % remove dataremoved(:,8:10)
+                % remove dataremoved(:,8:10) This should remove the doubled-up hours with bad data
                 [data(:,8:10),removed(:,8:10)] = remove_by_threshold(data(:,8:10),z_low_lim,z_high_lim);
                 empty_rows = sum(data(:,8:10),2) == 0;
                 data(empty_rows,:) = [];
-                
+				
+				% check no duplicate data
+				unique_dates = unique(data(:,1));
+				if length(unique_dates) ~= length(data)
+					error('>>> You appear to have duplicate data <<<');
+				end
+				
                 
                 data_size = size(data);
                 num_rows = data_size(1);
@@ -65,9 +71,11 @@ function [] = do_thresholding( data_dir, station, years, months, z_low_lim, z_hi
                     to_fix(num_rows+1:num_rows+max_month_size,1) = datenum([y m d h min s]);
                     to_fix = sortrows(to_fix,1);
                     
-                    % only keep unique ones
+                    % only keep unique ones, check only have one value at each time
                     [unique_dates,unique_date_indices] = unique(to_fix(:,1));
                     fixed = to_fix(unique_date_indices,:);
+					
+					
 
                     % check size
                     if max(size(fixed)) ~= max_month_size
