@@ -39,17 +39,41 @@ function [] = do_thresholding( data_dir, station, years, months, z_low_lim, z_hi
                 empty_rows = sum(data(:,8:10),2) == 0;
                 data(empty_rows,:) = [];
 				
-				% check no duplicate data
-				unique_dates = unique(data(:,1));
+				% DUPLICATE DATA CHECK TOO EXPENSIVE? You could just remove it all if two different sets, that usually seems to be the case anyway
+				% check for duplicate data, remove if same date different xyz
+				[unique_dates,unique_date_indices] = unique(data(:,1));
 				if length(unique_dates) ~= length(data)
-					error('>>> You appear to have duplicate data <<<');
+					warning('>>> You have duplicate data.Checking it <<<');
+					extra_data = data;
+					extra_data(unique_date_indices,:) = [];
+					e_size = size(extra_data);
+					dels = false(length(data),1);
+					for extra_entry = [1:e_size(1)]
+						corresp = data(:,1) == extra_data(extra_entry,1);
+						if (sum( data(corresp,8:10) == extra_data(extra_entry) ) ~= 3) % two different sets of data, remove both
+							dels(corresp) = true;
+						else 
+							disp('Some duplicate data. Removing.');
+							disp(extra_data);
+						end
+					end
+					if sum(dels) > 1
+						disp('Two sets of data for same dates. Removing both sets of data.');
+						data = data(~dels,:);
+					end
 				end
+				[unique_dates,unique_date_indices] = unique(data(:,1)); % now getting rid of duplicate data. This will be done again if interpolating, unfortuately
+				data = data(unique_date_indices,:);
+				
+				%[unique_dates,unique_date_indices] = unique(data(:,1));
+				%[unique_dates,unique_date_indices] = unique(data(:,1));
+				%if length(unique_dates) ~= length(data) % remove all of them as they never seem to actually be duplicate
 				
                 
                 data_size = size(data);
                 num_rows = data_size(1);
-                % interpolate anything missing
-                if interpolate_missing
+                % interpolate anything missing if there is data left
+                if interpolate_missing & min(data_size) > 0
                     disp('Attempting to interpolate missing data');
                     max_month_size = (31*24+7)*60*60/5; %got to start earlier as rotated to MLT, also have to have every second not just every five due to data
                     to_fix = nan(max_month_size+num_rows,10);
@@ -63,12 +87,12 @@ function [] = do_thresholding( data_dir, station, years, months, z_low_lim, z_hi
                     m = data(1,3)*basis;
                     d = data(1,4)*basis;
                     h = data(1,5)*basis;
-                    min = 0*basis;
+                    mins = 0*basis;
                     s = [0:max_month_size-1]'*5; %have to have every second not every five for mismatches when resetting data
                     
 
                     % stickk all the datenums together, ones from data first
-                    to_fix(num_rows+1:num_rows+max_month_size,1) = datenum([y m d h min s]);
+                    to_fix(num_rows+1:num_rows+max_month_size,1) = datenum([y m d h mins s]);
                     to_fix = sortrows(to_fix,1);
                     
                     % only keep unique ones, check only have one value at each time
@@ -94,12 +118,13 @@ function [] = do_thresholding( data_dir, station, years, months, z_low_lim, z_hi
                         fixed_length = fixed_length - 1;
                     end
                     fixed = fixed(cut_off_index:fixed_length,:);
+					fixed_length = fixed_length - cut_off_index + 1;
                     
                     % find bad places
                     good_data = ~isnan(fixed(:,8:10));
                     try_fix = ~good_data; % will now only do it if not too many in an hour
                     
-                    
+              
                     % see whether wort attempting to fix
                     for i = [1:floor(fixed_length/720)]
                         endpoint = min( [720*(i) fixed_length] );
@@ -128,8 +153,11 @@ function [] = do_thresholding( data_dir, station, years, months, z_low_lim, z_hi
                 end
                     
 
-
-                save(f_to_save,'data');
+				if min(size(data)) > 0 
+					save(f_to_save,'data');
+				else
+					warning('>>> Stuff loaded in but nothing saved out <<<');
+				end
                 
                 if save_removed
                     save(f_to_save2,'removed');
