@@ -13,7 +13,7 @@ function [] = fix_moved_hours( data_dir, station )
     disp('Glueing together hours split when converting to MLT');
     
     extra_data = [];
-    for year = [2004:-1:1990]
+    for year = [2005:-1:1990]
         for month = [12:-1:1]
             f_to_load = strcat(data_dir,sprintf('/sorted1/%s_%d_%d',station,year,month));
             f_to_save = strcat(data_dir,sprintf('/sorted2/%s_%d_%d',station,year,month));
