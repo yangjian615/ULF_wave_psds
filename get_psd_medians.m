@@ -18,7 +18,7 @@
 % d,h,sp - day, hour, speed of data
 
 
-function [output,bin_limits,output_info,hrs_out,dys_out,val_out] = get_psd_medians( data_dir, station, years, months, day_ranges, sort_by )
+function [output,bin_limits,output_info,hrs_out,dys_out,val_out] = get_psd_medians( data_dir, station, years, months, day_ranges, sort_by, use_offset )
 
     %recall omni data is datenum,SW speed bin, flow pressure, proton density
 	
@@ -30,24 +30,47 @@ function [output,bin_limits,output_info,hrs_out,dys_out,val_out] = get_psd_media
     dys_out = [];
     val_out = []; % corresponding values out, speed bin or whatever
 
-		
     unsorted_psds = zeros(360,3,0);
     unsorted_omni = zeros(4,0);
    
     % Load in ALL the data into huge thing
-    for year = years
-        for month = months
-            load(strcat(data_dir,sprintf('psds/%s_%d_%d.mat',station,year,month)));
-            disp(sprintf('Loading PSD data for %s, year %d month %d',station, year, month)); 
-            %now have hr_psds and mini_omni
-        
-            
-            unsorted_psds = cat(3,unsorted_psds,hr_psds);
-            unsorted_omni = cat(2,unsorted_omni, mini_omni');
-            
-        end
-    end
+	function [unsorted_psds,unsorted_omni] = get_all_data(data_dir,station,years,months,get_offset_data)
+	
+		unsorted_psds = zeros(360,3,0);
+		unsorted_omni = zeros(4,0);
+		hr_psds = [];
+		mini_omni = [];
+		
+		for year = years
+			for month = months
+				f_to_load = strcat(data_dir,sprintf('psds/%s_%d_%d.mat',station,year,month));
+				if get_offset_data
+					f_to_load = strcat(data_dir,sprintf('psds/offset/%s_%d_%d.mat',station,year,month));
+				end
+				if exist(f_to_load) ~= 2 
+					warning(sprintf('>>> Could not load file <<< %s',f_to_load));
+				else
+					load(f_to_load);
+					disp(sprintf('Loading PSD data for %s, year %d month %d',station, year, month)); 
+					%now have hr_psds and mini_omni
+			
+				
+					unsorted_psds = cat(3,unsorted_psds,hr_psds);
+					unsorted_omni = cat(2,unsorted_omni, mini_omni');
+				end
+			end
+		end
+	end
     
+	[unsorted_psds,unsorted_omni] = get_all_data(data_dir,station,years,months,false);
+	
+	if use_offset % add offset data to list
+		[unsorted_psds1,unsorted_omni1] = get_all_data(data_dir,station,years,months,true);
+		unsorted_psds = cat(3,unsorted_psds,unsorted_psds1);
+		unsorted_omni = cat(2,unsorted_omni, unsorted_omni1);
+		clearvars('unsorted_psds1','unsorted_omni1');
+	end
+	
     omni_size = size(unsorted_omni);
     psds_size = size(unsorted_psds);
     

@@ -25,17 +25,18 @@
 function [] = matlab_preprocessing()
     
     station = 'GILL';
-    years = [1990:2004];
+    years = [1990:2005];
     months = [1:12];
     data_dir = strcat(pwd,sprintf('/data/'));
     
-    do_omni = false;
-    
-    do_prep = false;
-    do_thresh = true; interpolate_missing = false; save_removed = false; %saving the removed makes twice as long
+    do_omni = true;
+  
+    do_prep = true;
+    do_thresh = true; interpolate_missing = true; save_removed = false; %saving the removed makes twice as long
     do_hr_sort = true;
     do_hr_fix = true; %should always run if re-sorting by hour 
     do_omni_remove = true; 
+	do_get_offset_data = false;
     
 	 %threshold values
     z_low = 5.8e4;
@@ -56,6 +57,7 @@ function [] = matlab_preprocessing()
     
    
     tic
+	disp(sprintf('Doing the processing for %s',station));
     
     if do_omni
         tic
@@ -92,6 +94,12 @@ function [] = matlab_preprocessing()
         remove_bad_omni( data_dir, station, years, months );
         toc
     end
+	
+	if do_get_offset_data
+		tic
+		make_offset_data( data_dir,station,years,months );
+		toc
+	end
 
     toc
 
