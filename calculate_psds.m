@@ -11,7 +11,7 @@ function [hr_psds] = calculate_psds( data )
 	if length(data_size) == 2
 		data_size(3) = 1;
 	end
-	
+	%xyz_means = find_overall_mean(data_dir,station,years,months);
 	
 	for slice = [1:data_size(3)]
 		for index = [1:data_size(2)]

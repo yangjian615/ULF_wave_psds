@@ -73,7 +73,7 @@ function output = read_in_omni_data( data_dir, station, years )
     output = zeros(sum(our_years),4);
     
     % fill i the data part
-    output(:,2) = temp_data(:,25); %the SW speed
+    output(:,2) = temp_data(:,25); % the SW speed
     output(:,3) = temp_data(:,29); % the flow pressure
     output(:,4) = temp_data(:,24); % the proton density
     
@@ -93,7 +93,7 @@ function output = read_in_omni_data( data_dir, station, years )
     dates(bad_data,:) = [];
     output(bad_data,:) = [];
     
-    % do convrsion and sort out datenums for output
+    % do conversion and sort out datenums for output
     for year = years
         this_year = dates(:,1) == year;
         if do_mlt_conversion
@@ -112,7 +112,7 @@ function output = read_in_omni_data( data_dir, station, years )
     
     %output(:,3) = convert_Kp( output(:,3) );
     
-    omni_data = output;
+    omni_data = struct('dates',num2cell(output(:,1)),'speed',num2cell(output(:,2)),'pressure',num2cell(output(:,3)),'Np',num2cell(output(:,4)));
     save( f_to_save, 'omni_data' ) ;
     
     if save_removed

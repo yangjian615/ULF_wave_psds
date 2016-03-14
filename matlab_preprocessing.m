@@ -27,7 +27,7 @@ function [] = matlab_preprocessing()
     station = 'GILL';
     years = [1990:2005];
     months = [1:12];
-    data_dir = strcat(pwd,sprintf('/data/'));
+    data_dir = '/glusterfs/scenario/users/mm840338/data_tester/data/';%strcat(pwd,sprintf('/data/'));
     
     do_omni = true;
   
@@ -36,11 +36,15 @@ function [] = matlab_preprocessing()
     do_hr_sort = true;
     do_hr_fix = true; %should always run if re-sorting by hour 
     do_omni_remove = true; 
-	do_get_offset_data = false;
+	do_the_binning = true;
+	%do_get_offset_data = false; %functionality needs restoring now we have structures
     
 	 %threshold values
     z_low = 5.8e4;
     z_high = 6.4e4;
+	
+	% MLT sectors
+	day_ranges = [ 3, 9 ; 9, 15; 15, 21 ;21,3];
     
 	if strcmp(station,'TEST')
 		do_omni = true;	
@@ -95,11 +99,17 @@ function [] = matlab_preprocessing()
         toc
     end
 	
-	if do_get_offset_data
+	if do_the_binning
 		tic
-		make_offset_data( data_dir,station,years,months );
+		bin_data_structures(data_dir,station,years,months,day_ranges);
 		toc
 	end
+	
+	% if do_get_offset_data
+		% tic
+		% make_offset_data( data_dir,station,years,months );
+		% toc
+	% end
 
     toc
 

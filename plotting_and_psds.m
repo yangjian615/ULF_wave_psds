@@ -8,7 +8,7 @@
 % 16-02-01 MOre stuff returned from get_psd_medians. Not using it yet.
 % 16-02-02 Plot information returned about the data
 
-function [] = plotting_and_psds(data_dir,station,years,months,calc_psds,sort_type,plot_info,use_offset)
+function [] = plotting_and_psds(data_dir,station,years,months,calc_psds,sort_type,plot_info)
 
 
     % station = 'GILL';
@@ -37,21 +37,18 @@ function [] = plotting_and_psds(data_dir,station,years,months,calc_psds,sort_typ
     ylabel_words = 'PSD, (nT)^2'; % / mHz';
     
     output_info = [];
-	disp(sprintf('Plotting and psds options: recalculate PSDs %d, sort type %s, plot the data spread %d, using offset data %l',calc_psds, sort_type,plot_info,use_offset));
+	disp(sprintf('Plotting and psds options: recalculate PSDs %d, sort type %s, plot the data spread %d',calc_psds, sort_type,plot_info));
 	
     
     if calc_psds        
         disp('Calculating PSDs');
-        get_save_psds( data_dir, station, years, months, false );
-		if use_offset
-			get_save_psds( data_dir, station, years, months, true );
-		end
+        get_save_psds( data_dir, station, years, months );
     end
     
     if strcmp(sort_type,'no_sort')
 
 		disp('Finding unsorted medians over requested data');
-		[meds, output_info,hrs,dys] = get_psd_medians(data_dir,station,years, months,zeros(4,2),sort_type);
+		[meds,bins,output_info,hrs,dys] = get_psd_medians(data_dir,station,years, months,sort_type);
 
         
         if plot_medians
@@ -67,18 +64,13 @@ function [] = plotting_and_psds(data_dir,station,years,months,calc_psds,sort_typ
         if plot_info 
             figure();
             bar(output_info,'grouped');
-            %legend(SW_bins,'Location','northwest');
             title('Amount of data used to find each median');
-            %MLTs = {sprintf('MLT %d - %d',day_ranges(1,1),day_ranges(1,2)),sprintf('MLT %d - %d',day_ranges(2,1),day_ranges(2,2)),sprintf('MLT %d - %d',day_ranges(3,1),day_ranges(3,2)),sprintf('MLT %d - %d',day_ranges(4,1),day_ranges(4,2))};
-            %set(gca,'XTickLabel', MLTs);
-            
             plot_data_spread(dys,hrs,ones(size(hrs)),'Days used');
         end
 		
-    elseif strcmp(sort_type,'speed') | strcmp(sort_type,'pressure')
-
+    else
 		disp('Finding medians over requested data');
-		[meds,bins,output_info,hrs,dys,spd] = get_psd_medians(data_dir,station,years, months,day_ranges,sort_type,use_offset);
+		[meds,bins,output_info,hrs,dys,spd] = get_psd_medians(data_dir,station,years, months,sort_type);
 
 		
         if plot_medians
@@ -130,7 +122,7 @@ function [] = plotting_and_psds(data_dir,station,years,months,calc_psds,sort_typ
             legend('boxoff')
 			
 			% not quite a title!
-			title_str = {sprintf('Median PSDs for %s',station) 'years:' num2str(years) 'months:' num2str(months) 'binned by:' sort_type 'using offset data:' num2str(use_offset)};
+			title_str = {sprintf('Median PSDs for %s',station) 'years:' num2str(years) 'months:' num2str(months) 'binned by:' sort_type };
 			annotation('textbox',[0.05 0.7 0.2 0.2],'String',title_str);%,'FitBoxToText','on');
 			
 
