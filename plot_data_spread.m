@@ -9,7 +9,7 @@
 % appropriate grid points to forma  matrix Z of the scalar values. THis is plotted as a surface and viewed from the top. 
 %
 % Currently it expects dates on the x-axis
-
+%
 
 function [] = plot_data_spread(xcol,ycol,zcol,title_words)
 
