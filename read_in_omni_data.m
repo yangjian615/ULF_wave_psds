@@ -15,7 +15,11 @@
 function output = read_in_omni_data( data_dir, station, years )
 
     save_removed = false; %save data thrown out for being bad
-    do_mlt_conversion = true; %SHOULD ALMOST ALWAYS BE TRUE
+    do_mlt_conversion = true;%true; %SHOULD ALMOST ALWAYS BE TRUE
+	
+	if ~do_mlt_conversion
+		warning('>>> You asre not converting to MLT<<<');
+	end	
 
     function output = convert_Kp( input );
         % Converts Kp values to 9-point system from OMNI format 0,3,7,10,13,17...
@@ -76,6 +80,7 @@ function output = read_in_omni_data( data_dir, station, years )
     output(:,2) = temp_data(:,25); % the SW speed
     output(:,3) = temp_data(:,29); % the flow pressure
     output(:,4) = temp_data(:,24); % the proton density
+    output(:,5) = temp_data(:,32); % the variablility in speed sigma_v
     
     
     mlts = read_in_mlt_midnight( data_dir, station );
@@ -112,7 +117,7 @@ function output = read_in_omni_data( data_dir, station, years )
     
     %output(:,3) = convert_Kp( output(:,3) );
     
-    omni_data = struct('dates',num2cell(output(:,1)),'speed',num2cell(output(:,2)),'pressure',num2cell(output(:,3)),'Np',num2cell(output(:,4)));
+    omni_data = struct('dates',num2cell(output(:,1)),'speed',num2cell(output(:,2)),'pressure',num2cell(output(:,3)),'Np',num2cell(output(:,4)),'sigma_v',num2cell(output(:,5)));
     save( f_to_save, 'omni_data' ) ;
     
     if save_removed
