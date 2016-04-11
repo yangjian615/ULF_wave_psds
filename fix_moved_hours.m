@@ -2,7 +2,11 @@
 % converting to MLT!
 
 % We move BACKWARDS (starting witha more recent month then going to the
-% previous)
+% previous) since the month has been shifted baclkwards by six hours. This 
+% means that some stuff at the very beginning of the month is now at the very end of 
+% earlier month. So this needs to be chopped off (saved in extra_data) and 
+% stuck on the end of the correct month file. Care must be taken for sticking 
+% together hours that are split in half.
 
 % This should ALWAYS run backwards on all files for a given station.
 
@@ -46,25 +50,38 @@ function [] = fix_moved_hours( data_dir, station )
                     
                     if later_hour ~= earlier_hour
                         disp('>>> THEY ARE NOT THE SAME HOUR <<<');
-                        disp('Dont move this hour');
+                        disp('Dont move this hour'); %Still need to remove it though! 
+						
+						% so remove these two part-slices. Take only second slicve onwards from extra_data
+						data = data(:,:,1:old_data_size(3)-1);
+						old_data_size = size(data);
                     else
-                    
+						disp(sprintf('fixing %s',char(datetime(datevec(earlier_hour)))));
                         % check they add up properly
                         num_later_entries = sum( sum(later_month_first_hour,2) ~= 0 );
                         num_earlier_entries = sum( sum(earlier_month_last_hour,2) ~= 0 );
                         split_slice_entries = num_earlier_entries + num_later_entries;
                         if  split_slice_entries < 720
-                            later_month_entries = sprintf('The later month has %d nonzero entries its first hour, found from extra_data', num_later_entries);
-                            earlier_month_entries = sprintf('The earlier month has %d nonzero entries in its last hour',num_earlier_entries);
-                            disp(later_month_entries);
-                            disp(earlier_month_entries);
-                            disp('Not enough data in split slice, not glueing the very first slice');
+                            %later_month_entries = sprintf('The later month has %d nonzero entries its first hour, found from extra_data', num_later_entries);
+                            %earlier_month_entries = sprintf('The earlier month has %d nonzero entries in its last hour',num_earlier_entries);
+                            %disp(later_month_entries);
+                            %disp(earlier_month_entries);
+                            disp(sprintf('Not enough data in split slice, only %d points overall, not glueing the very first slice',split_slice_entries));
+							%plot(data(:,8,old_data_size(3))); hold on; plot(extra_data(:,8,1));
+							
+							% removing these. Don't need to do for extra data as we only takle secodn onwards 
+							data = data(:,:,1:old_data_size(3)-1);
+							old_data_size = size(data);
                         elseif split_slice_entries > 720
-                            later_month_entries = sprintf('The later month has %d nonzero entries its first hour, found from extra_data', num_later_entries);
-                            earlier_month_entries = sprintf('The earlier month has %d nonzero entries in its last hour',num_earlier_entries);
-                            disp(later_month_entries);
-                            disp(earlier_month_entries);
+                            %later_month_entries = sprintf('The later month has %d nonzero entries its first hour, found from extra_data', num_later_entries);
+                            %earlier_month_entries = sprintf('The earlier month has %d nonzero entries in its last hour',num_earlier_entries);
+                            %disp(later_month_entries);
+                            %disp(earlier_month_entries);
                             disp('>>>TOO MUCH DATA, UNKNOWN REASON<<<');
+							%plot(data(:,8,old_data_size(3))); hold on; plot(extra_data(:,8,1));
+							% so remove these two part-slices. Take only second slicve onwards from extra_data
+							data = data(:,:,1:old_data_size(3)-1);
+							old_data_size = size(data);
                         else %stick together the split-up end hour if it adds up ok
                             temp = earlier_month_last_hour;
                             temp(num_earlier_entries+1:720,:) = later_month_first_hour(1:num_later_entries,:);
@@ -87,7 +104,26 @@ function [] = fix_moved_hours( data_dir, station )
                 % take off the bits that are still wrong
                 wrong_month = data(1,3,:) ~= month;
                 extra_data = data(:,:,wrong_month);
-                data(:,:,wrong_month) = [];
+				% BUG FIX: REMOVE ANY NON-FULL SLICES HERE. CHECK FIRST SLICE ONLY?
+				
+				% check the first hour - may be correct month but still not full
+				if ~wrong_month(1)
+					first_slice = data(:,:,1);
+					if sum( sum(first_slice,2) == 0 ) > 0
+						wrong_month(1) = true;
+						disp(sprintf('Removing part-slice %s',char(datetime(datevec(data(1,1,1))))));
+						plot(data(:,8,1));
+					end
+					clearvars('first_slice');
+				end
+				
+				data = data(:,:,~wrong_month);
+				earliest_hour = data(:,:,1);
+				if sum( sum(earliest_hour,2) == 0 ) > 0
+					disp('First hour in month still not full!');
+					data_size = size(data);
+					data = data(:,:,2:data_size(3));
+				end
 
                 save(f_to_save,'data');
             end
