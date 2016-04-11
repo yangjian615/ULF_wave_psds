@@ -2,15 +2,18 @@
 % plot it. Finding the median and plotting is sorted by SW speed bin and
 % day sector.
 
+% You can specify whether you want to plot the psd ('psd') or the power spectrum ('ps').
+
 % 16-01-04 MInor graph label changes
 % 16-01-06 Other graph changes
 % 16-01-29 PLot unsorted medians
 % 16-02-01 MOre stuff returned from get_psd_medians. Not using it yet.
 % 16-02-02 Plot information returned about the data
 
-function [] = plotting_and_psds(data_dir,station,years,months,calc_psds,sort_type,plot_info)
+function [] = plotting_and_psds(data_dir,station,years,months,sort_type,ps_or_psd,plot_info)
 
-
+	jonny_correction_factor = false; % do you want your PSDS to look like Jonnys?
+	
     % station = 'GILL';
     % years = [1990:2004];
     % months = [1:12];
@@ -32,23 +35,27 @@ function [] = plotting_and_psds(data_dir,station,years,months,calc_psds,sort_typ
     freqs = (f_max/(N))*n*(1e3); %in mHz 
     day_ranges = [ 3, 9 ; 9, 15; 15, 21 ;21,3];
     
-    axis_lim = [0.75,14,-inf,inf];%[0.75,14,0,1.5e5];%[0.75,14,0.4e-4,0.9e3];
+    axis_lim = [];%[0.75,14,0.5,0.9e5];%-inf,inf];%[0.75,14,0,1.5e5];%[0.75,14,0.4e-4,0.9e3];
     xlabel_words = 'Freq, mHz';
-    ylabel_words = 'PSD, (nT)^2'; % / mHz';
+	ylabel_words = [];
+	if strcmp(ps_or_psd,'psd')
+		ylabel_words = 'PSD, (nT)^2 mHz^{-1}'; % / mHz';
+		axis_lim = [0.75,14,1.9e2,0.99e9];
+	else if  strcmp(ps_or_psd,'ps')
+		ylabel_words = 'Power, (nT)^2';
+		axis_lim = [0.75,14,0.5,0.9e5];
+	else
+		error('>>> PS or PSD?? <<<');
+	end
     
     output_info = [];
-	disp(sprintf('Plotting and psds options: recalculate PSDs %d, sort type %s, plot the data spread %d',calc_psds, sort_type,plot_info));
+	disp(sprintf('Plotting and psds options: sort type %s, %s, plot the data spread %d',sort_type,ps_or_psd,plot_info));
 	
-    
-    if calc_psds        
-        disp('Calculating PSDs');
-        get_save_psds( data_dir, station, years, months );
-    end
     
     if strcmp(sort_type,'no_sort')
 
 		disp('Finding unsorted medians over requested data');
-		[meds,bins,output_info,hrs,dys] = get_psd_medians(data_dir,station,years, months,sort_type);
+		[meds,bins,output_info,hrs,dys] = get_psd_medians(data_dir,station,years, months,sort_type,ps_or_psd);
 
         
         if plot_medians
@@ -70,8 +77,10 @@ function [] = plotting_and_psds(data_dir,station,years,months,calc_psds,sort_typ
 		
     else
 		disp('Finding medians over requested data');
-		[meds,bins,output_info,hrs,dys,spd] = get_psd_medians(data_dir,station,years, months,sort_type);
-
+		[meds,bins,output_info,hrs,dys,spd] = get_psd_medians(data_dir,station,years, months,sort_type,ps_or_psd);
+		if jonny_correction_factor
+			meds = (1/N^2)*meds;
+		end
 		
         if plot_medians
 
@@ -110,7 +119,7 @@ function [] = plotting_and_psds(data_dir,station,years,months,calc_psds,sort_typ
 			bin_units = {};
 			if strcmp(sort_type,'speed')
 				bin_units = 'km/s';
-			elseif strcmp(sort_type,'pressure')
+			else 
 				bin_units = '???';
 			end
 			the_bins{1} = strcat('< ',num2str(bins(1)),bin_units); 
@@ -122,7 +131,7 @@ function [] = plotting_and_psds(data_dir,station,years,months,calc_psds,sort_typ
             legend('boxoff')
 			
 			% not quite a title!
-			title_str = {sprintf('Median PSDs for %s',station) 'years:' num2str(years) 'months:' num2str(months) 'binned by:' sort_type };
+			title_str = {sprintf('Median PSDs/power spectra for %s',station) 'years:' num2str(years) 'months:' num2str(months) 'binned by:' sort_type };
 			annotation('textbox',[0.05 0.7 0.2 0.2],'String',title_str);%,'FitBoxToText','on');
 			
 
@@ -135,11 +144,15 @@ function [] = plotting_and_psds(data_dir,station,years,months,calc_psds,sort_typ
                 this_ax = ax(plot_posns(j));
                 x1 = axis_lim(1)+0.1*log(axis_lim(2)-axis_lim(1));
                 y1 = axis_lim(3)+0.1*log(axis_lim(4)-axis_lim(3));
+				if strcmp(ps_or_psd,'psd')
+					x1 = 1.1;%
+					y1 = 1e3;
+				end
                 title_words = ' ';
                 halign = ' ';
 
                 if ceil((j)/4) == 1
-                    component = 'X';
+                    component = 'X';%'H';%
                     title_words = 'Day sector:';
                     halign = 'center';
                     if j ~= 1
@@ -147,7 +160,7 @@ function [] = plotting_and_psds(data_dir,station,years,months,calc_psds,sort_typ
                     end
 
                 else
-                    component = 'Y';
+                    component = 'Y';%'D';%
                     title_words = sprintf('MLT %d - %d',day_ranges(sector,1),day_ranges(sector,2));
                     halign = 'right';
 

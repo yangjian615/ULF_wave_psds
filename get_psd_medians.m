@@ -4,6 +4,8 @@
 % Note that if there are no results to plot median PSDs with then we return
 % a value value for that slice of the matrix.
 
+% You can specify whether you want to plot the psd ('psd') or the power spectrum ('ps').
+
 % HISTORY
 % 15-12-08 Created
 % 16-01-29 If zeros(4,2) is entered into day_ranges, just return medians unsorted
@@ -18,7 +20,7 @@
 % d,h,sp - day, hour, speed of data
 
 
-function [output,bin_limits,output_info,hrs_out,dys_out,val_out] = get_psd_medians( data_dir, station, years, months, sort_by)
+function [output,bin_limits,output_info,hrs_out,dys_out,val_out] = get_psd_medians( data_dir, station, years, months, sort_by, ps_or_psd)
 
     %recall omni data is datenum,SW speed bin, flow pressure, proton density
 	
@@ -30,17 +32,17 @@ function [output,bin_limits,output_info,hrs_out,dys_out,val_out] = get_psd_media
     dys_out = [];
     val_out = []; % corresponding values out, speed bin or whatever
 
+	p_f = ps_or_psd;
     
 	[all_data,data_bins] = get_all_psd_data(data_dir,station,years,months);
 	
-		
     
 	% sort according to options
 	if strcmp(sort_by,'no_sort') %just find medians of all of them 
         disp('Not sorting by MLT or solar wind speed');
-        meds(:,1) = median(cell2mat({all_data.xpsds}),2);
-        meds(:,2) = median(cell2mat({all_data.ypsds}),2);
-        meds(:,3) = median(cell2mat({all_data.zpsds}),2);
+        meds(:,1) = median(cell2mat({all_data.(sprintf('x%s',p_f))}),2);
+        meds(:,2) = median(cell2mat({all_data.(sprintf('y%s',p_f))}),2);
+        meds(:,3) = median(cell2mat({all_data.(sprintf('z%s',p_f))}),2);
         data_size = max(size(all_data));
         output_info = data_size;
         [y m d h] = datevec(cell2mat({all_data.dates}));
@@ -59,9 +61,9 @@ function [output,bin_limits,output_info,hrs_out,dys_out,val_out] = get_psd_media
 				in_this_sector = cell2mat({all_data.MLT}) == sector;
 				this_sector_this_bin = in_this_sector & in_this_bin;
 				if sum(this_sector_this_bin) > 0 %ie if any results found
-					meds(:,1,sector,bin) = median(cell2mat({all_data(this_sector_this_bin).xpsds}),2);
-					meds(:,2,sector,bin) = median(cell2mat({all_data(this_sector_this_bin).ypsds}),2);
-					meds(:,3,sector,bin) = median(cell2mat({all_data(this_sector_this_bin).zpsds}),2);
+					meds(:,1,sector,bin) = median(cell2mat({all_data(this_sector_this_bin).(sprintf('x%s',p_f))}),2);
+					meds(:,2,sector,bin) = median(cell2mat({all_data(this_sector_this_bin).(sprintf('y%s',p_f))}),2);
+					meds(:,3,sector,bin) = median(cell2mat({all_data(this_sector_this_bin).(sprintf('z%s',p_f))}),2);
 					output_info(sector,bin) = sum(in_this_sector); %how many results DID we find?
 				end
 
