@@ -26,10 +26,9 @@ import os.path
 start_time = time.time()
 
 
-
 # Get all files from GILL station
 all_GILL_files = []
-station = 'GILL'
+station = 'PINA'
 
 print('Reading in files from '+station)
 
@@ -47,9 +46,19 @@ years = np.arange(1990,2006) #np.arange( 1990, 2006 )
 months = np.arange(1,13)
 print(years)
 
+extra_factor = 0;
+if station == 'GILL':
+    extra_factor = 3
+elif station == 'FCHU':
+    extra_factor = 5
+elif station == 'ISLL':
+    extra_factor = 50
+elif station == 'PINA':
+    extra_factor = 30
+ 
 
 max_yr_entries = 365*24*60*60/5
-max_mth_entries = (31+4)*24*60*60/5
+max_mth_entries = (31+extra_factor)*24*60*60/5
 for year in years:
     print('Doing files for year ',year)
     
@@ -65,13 +74,17 @@ for year in years:
         for GILL_data in all_GILL_files:
             end = len(GILL_data)
   
-            #print(GILL_data[end-16:end-12],GILL_data[end-12:end-10])
+            
             if GILL_data[end-16:end-12] == str(year) and int( GILL_data[end-12:end-10] ) == month:
+                #print(GILL_data[end-16:end-12],GILL_data[end-12:end-10])
                 with open(GILL_data) as this_file:
                 
                     if month_data_entry > 31*24*60*60/5:
-                        print('Warning: seems to be too much data in month ',month)
+                        print('Warning: seems to be too much data in month ',month)#,' already ',num_lines,' in this file')
+                        
+                    num_lines = 0;
                     for line in this_file:
+                        num_lines+=1;
                         if len(line) > 44:
                             if line[0] != '#' and line[45] == '.':
                                 
@@ -79,10 +92,10 @@ for year in years:
                                 line_data = [int(line[0:4]), int(line[4:6]), int(line[6:8]), float(line[8:10]), int(line[10:12]), int(line[12:14]), float(line[14:24]), float(line[24:34]),float(line[34:44])]
                                 month_data[month_data_entry,:] = line_data
                                 month_data_entry += 1
-                              
+                    #print(num_lines,' lines in file for file ',GILL_data)         
              
         #print('Saved file ',fname_out)
-        scipy.io.savemat(fname_out,mdict={'data':month_data})
+        scipy.io.savemat(fname_out,mdict={'data':month_data[1:month_data_entry+1]})
         gc.collect()
     
     
