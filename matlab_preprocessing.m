@@ -27,16 +27,17 @@ function [] = matlab_preprocessing()
     station = 'GILL';
     years = [1990:2005];
     months = [1:12];
-    data_dir = '/glusterfs/scenario/users/mm840338/data_tester/data/';%strcat(pwd,sprintf('/data/'));
+    data_dir = '/net/glusterfs_phd/scenario/users/mm840338/data_tester/data/';%strcat(pwd,sprintf('/data/'));
     
-    do_omni = true;
+    do_omni = false;
   
-    do_prep = true;
-    do_thresh = true; interpolate_missing = true; save_removed = false; %saving the removed makes twice as long
-    do_hr_sort = true;
-    do_hr_fix = true; %should always run if re-sorting by hour 
-    do_omni_remove = true; 
-	do_the_binning = true;
+    do_prep = false;
+    do_thresh = false; interpolate_missing = true; save_removed = false; %saving the removed makes twice as long
+    do_hr_sort = false;
+    do_hr_fix = false; %should always run if re-sorting by hour 
+    do_omni_remove = false; 
+	do_the_binning = false;
+	do_calc_psds = true;
 	%do_get_offset_data = false; %functionality needs restoring now we have structures
     
 	 %threshold values
@@ -111,6 +112,11 @@ function [] = matlab_preprocessing()
 		% toc
 	% end
 
+    if do_calc_psds    
+		tic    
+        get_save_psds( data_dir, station, years, months );
+		toc
+    end
     toc
 
 end

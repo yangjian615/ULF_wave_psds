@@ -4,7 +4,8 @@
 
 function [] = get_save_psds( data_dir, station, years, months )
 
-    
+    disp('Finding the power spectrum and PSDs');
+	
     for year = years
         for month = months
             f_to_load = strcat(data_dir,sprintf('ready/%s_%d_%d',station,year,month));
@@ -21,11 +22,22 @@ function [] = get_save_psds( data_dir, station, years, months )
 				load(f_to_load);
 				disp(sprintf('calculating psds for %s, year %f month %f',station,year,month));
 				
+				% get f_res for the psds
+				N = length( cell2mat({data(1).x}) );
+				time_temp = data(1).times;
+				time1 = time_temp(1);
+				time2 = time_temp(2);
+				t_res = abs(etime(datevec(time1),datevec(time2))); % in seconds
+				f_res = 1/(N*t_res);
+			
 				s_size = size(data);
 				for entry = [1:s_size(2)]
-					data(entry).xpsds = calculate_psds(data(entry).x);
-					data(entry).ypsds = calculate_psds(data(entry).y);
-					data(entry).zpsds = calculate_psds(data(entry).z);
+					data(entry).xps = calculate_powerspectrum(data(entry).x);
+					data(entry).yps = calculate_powerspectrum(data(entry).y);
+					data(entry).zps = calculate_powerspectrum(data(entry).z);
+					data(entry).xpsds = (1/f_res)*data(entry).xps;
+					data(entry).ypsds = (1/f_res)*data(entry).yps;
+					data(entry).zpsds = (1/f_res)*data(entry).zps;
 				end
   
 				save(f_to_save,'data','data_bins');
