@@ -54,7 +54,7 @@ function [output,bin_limits,output_info,hrs_out,dys_out,val_out] = get_psd_media
 		num_quants = length(cell2mat(data_bins.(sort_by)))+1;	
 		
 		for bin = [1:num_quants]
-			in_this_bin = cell2mat({all_data.speed_bin}) == bin;
+			in_this_bin = cell2mat({all_data.(sprintf('%s_bin',sort_by))}) == bin;
 
 
 			for sector = [1:4]
