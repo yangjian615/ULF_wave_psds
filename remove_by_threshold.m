@@ -20,11 +20,13 @@
 %             z_low = 5.8e4;
 %             z_high = 6.4e4;
 
-            dels = input(:, z_col) > z_high | input(:,z_col) < z_low;
-            output(dels,:) = zeros(sum(dels),input_size(2));
-            removed(dels,:) = input(dels,:);
-            %output(dels,:) = [];
+			%% remove according to z-value
+            % dels = input(:, z_col) > z_high | input(:,z_col) < z_low;
+            % output(dels,:) = zeros(sum(dels),input_size(2));
+            % removed(dels,:) = input(dels,:);
+            
 
+			% remove according to total of x,y,z values
             tot_low = z_low;%5.95e4;
             tot_high = z_high;%6.3e4;
             tot_field = sqrt( output(:,x_col).^2 + output(:,y_col).^2 + output(:,z_col).^2 );
@@ -32,6 +34,6 @@
             dels = tot_field > tot_high | tot_field < tot_low;
             output(dels,:) = zeros(sum(dels),input_size(2));
             removed(dels,:) = input(dels,:);
-            %output(dels,:) = [];
+            
 
     end
