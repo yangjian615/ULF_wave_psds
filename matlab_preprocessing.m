@@ -24,7 +24,7 @@
 
 function [] = matlab_preprocessing()
     
-    station = 'GILL';
+    station = 'ISLL';
     years = [1990:2005];
     months = [1:12];
     data_dir = '/net/glusterfs_phd/scenario/users/mm840338/data_tester/data/';%strcat(pwd,sprintf('/data/'));
@@ -32,12 +32,13 @@ function [] = matlab_preprocessing()
     do_omni = false;
   
     do_prep = false;
-    do_thresh = false; interpolate_missing = true; save_removed = false; %saving the removed makes twice as long
-    do_hr_sort = false;
-    do_hr_fix = false; %should always run if re-sorting by hour 
-    do_omni_remove = false; 
-	do_the_binning = false;
+    do_thresh = true; interpolate_missing = true; save_removed = false; %saving the removed makes twice as long
+    do_hr_sort = true;
+    do_hr_fix = true; %should always run if re-sorting by hour 
+    do_omni_remove = true; 
+	do_the_binning = true;
 	do_calc_psds = true;
+	do_find_medians  =  true;
 	%do_get_offset_data = false; %functionality needs restoring now we have structures
     
 	 %threshold values
@@ -117,6 +118,14 @@ function [] = matlab_preprocessing()
         get_save_psds( data_dir, station, years, months );
 		toc
     end
+	
+	% refresh the overall speed-binned medians
+	if do_find_medians
+		tic
+		refresh_meds();
+		toc
+	end
+	
     toc
 
 end
