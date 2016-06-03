@@ -16,6 +16,9 @@ function [pl_rows,pl_cols] = picknumsubplots( numplots )
 	elseif ceil(numplots/4) ==3
 		pl_rows = 4;
 		pl_cols = 3;
+	elseif ceil(numplots/4) ==2
+		pl_rows = 4;
+		pl_cols = 2;
 	elseif ceil(numplots/3) ==2
 		pl_rows = 3;
 		pl_cols = 2;
@@ -29,6 +32,7 @@ function [pl_rows,pl_cols] = picknumsubplots( numplots )
 		pl_rows = 1;
 		pl_cols = 1;
 	else
+		disp(numplots);
 		error('missed case, couldnt plot');
 	end
 		

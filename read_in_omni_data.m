@@ -79,7 +79,7 @@ function omni_data = read_in_omni_data( data_dir, station, years )
     % fill i the data part
     output(:,2) = temp_data(:,25); % 'speed' the SW speed
     output(:,3) = temp_data(:,29); % 'pressure' the flow pressure
-    output(:,4) = temp_data(:,24); % 'Np' the proton density
+    output(:,4) = temp_data(:,24); % 'Np' the proton density, #N/cm^3
     output(:,5) = temp_data(:,32); % 'sigma_v' the variablility in speed sigma_v
 	output(:,6) = temp_data(:,17); % 'Bz' Bz (GSM)
 	output(:,7) = temp_data(:,38); % 'Ma' Alfven mach number

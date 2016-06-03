@@ -3,7 +3,17 @@
 % Originally used in get_psd_medians
 
 
-function [all_data,data_bins] = get_all_psd_data(data_dir,station,years,months)
+function [all_data,data_bins] = get_all_psd_data(data_dir,get_opts);
+
+	if isempty(get_opts)
+		get_opts.station = 'GILL';
+		get_opts.y = [1990:2004];
+		get_opts.m = [1:12];
+	end
+	
+	station = get_opts.station;
+	years = get_opts.y;
+	months = get_opts.m;	
 
 	all_data = [];
 	data = [];
