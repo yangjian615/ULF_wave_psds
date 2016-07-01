@@ -11,10 +11,6 @@ function [] = get_save_psds( data_dir, station, years, months )
             f_to_load = strcat(data_dir,sprintf('ready/%s_%d_%d',station,year,month));
             f_to_save = strcat(data_dir, sprintf('psds/%s_%d_%d',station,year,month));
 			
-			%if do_offset 
-			%	f_to_load = strcat(data_dir,sprintf('/ready/offset/%s_%d_%d',station,year,month));
-			%	f_to_save = strcat(data_dir, sprintf('/psds/offset/%s_%d_%d',station,year,month));
-			%end
 			
             if exist(strcat(f_to_load,'.mat')) ~= 2 
 				warning(sprintf('>>> Could not load file <<< %s',f_to_load));
@@ -34,17 +30,13 @@ function [] = get_save_psds( data_dir, station, years, months )
 			
 				s_size = size(data);
 				for entry = [1:s_size(2)]
-					data(entry).xps = calculate_multitaper_powerspectrum(data(entry).x,t_res);
-					data(entry).yps = calculate_multitaper_powerspectrum(data(entry).y,t_res);
-					[data(entry).zps,data(entry).freqs] = calculate_multitaper_powerspectrum(data(entry).z,t_res);
-					%data(entry).xps = calculate_powerspectrum(data(entry).x);
-					%data(entry).yps = calculate_powerspectrum(data(entry).y);
-					%data(entry).zps = calculate_powerspectrum(data(entry).z);
-					%data(entry).xpsds = (1/f_res)*data(entry).xps;
-					%data(entry).ypsds = (1/f_res)*data(entry).yps;
-					%data(entry).zpsds = (1/f_res)*data(entry).zps;
+					to_calc = [data(entry).x data(entry).y data(entry).z];
+					[pxx,freqs] = calculate_multitaper_powerspectrum(to_calc,t_res);
+					data(entry).xps = pxx(:,1);
+					data(entry).yps = pxx(:,2);
+					data(entry).zps = pxx(:,3);
+					data(entry).freqs = freqs;
 				end
-				%data.freqs = freqs;
   
 				save(f_to_save,'data','data_bins');
             end
