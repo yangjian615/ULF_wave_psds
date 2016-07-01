@@ -29,16 +29,22 @@ function [] = get_save_psds( data_dir, station, years, months )
 				time2 = time_temp(2);
 				t_res = abs(etime(datevec(time1),datevec(time2))); % in seconds
 				f_res = 1/(N*t_res);
+				
+				freqs = [];
 			
 				s_size = size(data);
 				for entry = [1:s_size(2)]
-					data(entry).xps = calculate_powerspectrum(data(entry).x);
-					data(entry).yps = calculate_powerspectrum(data(entry).y);
-					data(entry).zps = calculate_powerspectrum(data(entry).z);
-					data(entry).xpsds = (1/f_res)*data(entry).xps;
-					data(entry).ypsds = (1/f_res)*data(entry).yps;
-					data(entry).zpsds = (1/f_res)*data(entry).zps;
+					data(entry).xps = calculate_multitaper_powerspectrum(data(entry).x,t_res);
+					data(entry).yps = calculate_multitaper_powerspectrum(data(entry).y,t_res);
+					[data(entry).zps,data(entry).freqs] = calculate_multitaper_powerspectrum(data(entry).z,t_res);
+					%data(entry).xps = calculate_powerspectrum(data(entry).x);
+					%data(entry).yps = calculate_powerspectrum(data(entry).y);
+					%data(entry).zps = calculate_powerspectrum(data(entry).z);
+					%data(entry).xpsds = (1/f_res)*data(entry).xps;
+					%data(entry).ypsds = (1/f_res)*data(entry).yps;
+					%data(entry).zpsds = (1/f_res)*data(entry).zps;
 				end
+				%data.freqs = freqs;
   
 				save(f_to_save,'data','data_bins');
             end

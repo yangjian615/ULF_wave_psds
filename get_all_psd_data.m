@@ -3,7 +3,7 @@
 % Originally used in get_psd_medians
 
 
-function [all_data,data_bins] = get_all_psd_data(data_dir,get_opts);
+function [all_data,data_bins,freqs] = get_all_psd_data(data_dir,get_opts);
 
 	if isempty(get_opts)
 		get_opts.station = 'GILL';
@@ -17,7 +17,8 @@ function [all_data,data_bins] = get_all_psd_data(data_dir,get_opts);
 
 	all_data = [];
 	data = [];
-	data_bins = [];
+	data_bins = []; % these may change between stations? for one station should be same
+	freqs = [];
 	
 	for year = years
 		for month = months
@@ -27,7 +28,7 @@ function [all_data,data_bins] = get_all_psd_data(data_dir,get_opts);
 			else
 				load(f_to_load);
 				disp(sprintf('Loading PSD data for %s, year %d month %d',station, year, month)); 
-				%now have data and data_bins
+				%now have data and data_bins and freqs
 				all_data = [all_data,data];
 			
 			end

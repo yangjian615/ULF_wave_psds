@@ -8,18 +8,23 @@
 
 function [new_cmap] = rescale_colormap( old_cmap, data )
 	
+	warning('>> DOESNT SEEM TO WORK <<');
+	if sum(isnan(data)) > 0
+		error('>> NaNs found <<');
+	end
 	data = sort(data); 
 	quants = quantile(data,62);
+	%sdisp(quants);
 	
 	% get a curve interpolated for all three colour directions
 	int1 = fit([1:64]',old_cmap(:,1),'cubicinterp');
 	int2 = fit([1:64]',old_cmap(:,2),'cubicinterp');
 	int3 = fit([1:64]',old_cmap(:,3),'cubicinterp');
 	
-	
 	new_cmap = old_cmap;
 	
 	% get rescaled interior colours
+	temp = [1:64];
 	for col_ind = [2:63]
 		q = quants(col_ind-1); %the quantile value for this point
 		d_pt = median(find(data==q));%index location of this point
@@ -31,13 +36,20 @@ function [new_cmap] = rescale_colormap( old_cmap, data )
 			end
 		end
 		rescaled_pt = (d_pt/length(data))*64; % rescaling from index along data to [1:64] axis
+		temp(col_ind) = rescaled_pt;
 		new_cmap(col_ind,:) = [int1(rescaled_pt) int2(rescaled_pt) int3(rescaled_pt)];
 	end
 	
 	% check your new colourmap
-	if sum(sum(new_cmap>1)) > 0 | sum(sum(new_cmap<0)) > 01
+	if sum(sum(new_cmap>1)) > 0 | sum(sum(new_cmap<0)) > 1
 		error('>>>rescaled colormap is no good<<<');
 	end
+	
+	%figure(11); 
+	%subplot(3,1,1); rgbplot(old_cmap); axis([1,64,0,1]);
+	%subplot(3,1,2); rgbplot(new_cmap); axis([1,64,0,1]);
+	%subplot(3,1,3); plot([1:64],[1:64],'k'); hold on; plot([1:64],temp,'--r');
+	
 
 
 end

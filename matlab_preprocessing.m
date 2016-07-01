@@ -24,21 +24,21 @@
 
 function [] = matlab_preprocessing()
     
-    station = 'ISLL';
+    stations = {'GILL','PINA','FCHU','PINA'};%{'GILL','FCHU','ISLL','PINA'};
     years = [1990:2005];
     months = [1:12];
     data_dir = '/net/glusterfs_phd/scenario/users/mm840338/data_tester/data/';%strcat(pwd,sprintf('/data/'));
     
-    do_omni = false;
+    do_omni = true;
   
-    do_prep = false;
+    do_prep = true;
     do_thresh = true; interpolate_missing = true; save_removed = false; %saving the removed makes twice as long
     do_hr_sort = true;
     do_hr_fix = true; %should always run if re-sorting by hour 
     do_omni_remove = true; 
 	do_the_binning = true;
 	do_calc_psds = true;
-	do_find_medians  =  true;
+	do_find_medians  =  false;
 	%do_get_offset_data = false; %functionality needs restoring now we have structures
     
 	 %threshold values
@@ -48,84 +48,88 @@ function [] = matlab_preprocessing()
 	% MLT sectors
 	day_ranges = [ 3, 9 ; 9, 15; 15, 21 ;21,3];
     
-	if strcmp(station,'TEST')
-		do_omni = true;	
-		do_prep = false;
-		do_thresh = false; interpolate_missing = false; save_removed = false;%you may need to puyt in new threshold limits.
-		do_hr_sort = false;
-		do_hr_fix = false; %should always run if re-sorting by hour 
-		do_omni_remove = true;
-        
-        z_low = -1.1;
-        z_high = 1.1;
-	end
 		
     
+    for station_cell = stations
+		station = char(station_cell);
+		
+		if strcmp(station,'TEST')
+			do_omni = true;	
+			do_prep = false;
+			do_thresh = false; interpolate_missing = false; save_removed = false;%you may need to puyt in new threshold limits.
+			do_hr_sort = false;
+			do_hr_fix = false; %should always run if re-sorting by hour 
+			do_omni_remove = true;
+			
+			z_low = -1.1;
+			z_high = 1.1;
+		end
    
-    tic
-	disp(sprintf('Doing the processing for %s',station));
-    
-    if do_omni
-        tic
-        read_in_omni_data( data_dir, station, years );
-        toc
-    end
-    
-    if do_prep 
-        tic
-        data_prep( data_dir, station, years, months );
-        toc
-    end
-    
-    if do_thresh
-        tic
-        do_thresholding( data_dir, station, years, months, z_low, z_high, interpolate_missing, save_removed );
-        toc
-    end
-    
-    if do_hr_sort
-        tic
-        sort_by_hour( data_dir, station, years, months );
-        toc
-    end
-    
-    if do_hr_fix
-        tic
-        fix_moved_hours( data_dir, station );
-        toc
-    end
-    
-    if do_omni_remove
-        tic
-        remove_bad_omni( data_dir, station, years, months );
-        toc
-    end
-	
-	if do_the_binning
 		tic
-		bin_data_structures(data_dir,station,years,months,day_ranges);
-		toc
-	end
-	
-	% if do_get_offset_data
-		% tic
-		% make_offset_data( data_dir,station,years,months );
-		% toc
-	% end
+		disp(sprintf('Doing the processing for %s',station));
+		
+		if do_omni
+			tic
+			read_in_omni_data( data_dir, station, years );
+			toc
+		end
+		
+		if do_prep 
+			tic
+			data_prep( data_dir, station, years, months );
+			toc
+		end
+		
+		if do_thresh
+			tic
+			do_thresholding( data_dir, station, years, months, z_low, z_high, interpolate_missing, save_removed );
+			toc
+		end
+		
+		if do_hr_sort
+			tic
+			sort_by_hour( data_dir, station, years, months );
+			toc
+		end
+		
+		if do_hr_fix
+			tic
+			fix_moved_hours( data_dir, station );
+			toc
+		end
+		
+		if do_omni_remove
+			tic
+			remove_bad_omni( data_dir, station, years, months );
+			toc
+		end
+		
+		if do_the_binning
+			tic
+			bin_data_structures(data_dir,station,years,months,day_ranges);
+			toc
+		end
+		
+		% if do_get_offset_data
+			% tic
+			% make_offset_data( data_dir,station,years,months );
+			% toc
+		% end
 
-    if do_calc_psds    
-		tic    
-        get_save_psds( data_dir, station, years, months );
-		toc
-    end
-	
-	% refresh the overall speed-binned medians
-	if do_find_medians
-		tic
-		refresh_meds();
+		if do_calc_psds    
+			tic    
+			get_save_psds( data_dir, station, years, months );
+			toc
+		end
+		
+		% refresh the overall speed-binned medians
+		if do_find_medians
+			tic
+			refresh_meds();
+			toc
+		end
+		
 		toc
 	end
-	
-    toc
 
 end

@@ -15,8 +15,10 @@ function [] = data_prep(data_dir,station,years,months)
     do_mlt_conversion = true; %THESE SHOULD BOTH BE TRUE ALMOST ALWAYS
     do_mag_rot = true;
     
-    function output = rotate_to_mag_north( this_year, input, decs ) %so the X will point to magnetic north and Y will be perp to this
-        % copied in from setup_C_data
+    function output = rotate_to_mag_north( this_year, input, decs ) 
+		%so the X will point to magnetic north and Y will be perp to this (ie x~ H and y~D, pointing to geomag East:we)
+        
+		% copied in from setup_C_data
         % this only deals with the X,Y columns (so inout should only have
         % two cols)
         

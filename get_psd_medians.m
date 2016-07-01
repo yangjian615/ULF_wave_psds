@@ -34,7 +34,10 @@ function [output,bin_limits,output_info,hrs_out,dys_out,val_out] = get_psd_media
 
 	p_f = ps_or_psd;
     
-	[all_data,data_bins] = get_all_psd_data(data_dir,station,years,months);
+	
+	getdata = [];
+	getdata.station = station; getdata.y = years; getdata.m = months;
+	[all_data,data_bins] = get_all_psd_data(data_dir,getdata);
 	
     
 	% sort according to options

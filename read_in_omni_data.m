@@ -77,14 +77,19 @@ function omni_data = read_in_omni_data( data_dir, station, years )
     output = zeros(sum(our_years),4);
     
     % fill i the data part
-    output(:,2) = temp_data(:,25); % 'speed' the SW speed
-    output(:,3) = temp_data(:,29); % 'pressure' the flow pressure
-    output(:,4) = temp_data(:,24); % 'Np' the proton density, #N/cm^3
-    output(:,5) = temp_data(:,32); % 'sigma_v' the variablility in speed sigma_v
-	output(:,6) = temp_data(:,17); % 'Bz' Bz (GSM)
-	output(:,7) = temp_data(:,38); % 'Ma' Alfven mach number
-	output(:,8) = temp_data(:,55); % 'Mm' Magentosonic mach number
-    
+    output(:,2) = temp_data(:,25); % 'speed' the SW speed ~km/sec
+    output(:,3) = temp_data(:,29); % 'pressure' the flow pressure ~nPa
+    output(:,4) = temp_data(:,24); % 'Np' the proton density, ~#N/cm^3
+    output(:,5) = temp_data(:,32); % 'sigma_v' the variablility in speed sigma_v ~ km/sec
+	output(:,6) = temp_data(:,17); % 'Bz' Bz (GSM) ~nT
+	output(:,7) = temp_data(:,38); % 'Ma' Alfven mach number ~#
+	output(:,8) = temp_data(:,55); % 'Mm' Magentosonic mach number ~#
+	output(:,9) = temp_data(:,12); % 'phi' longitudinal angle (v off of x axis onto GSE +/-y) ~Deg
+	output(:,10) = temp_data(:,11); % 'theta' latitudinal angle (v off of x axis onto GSE +/-z) ~Deg
+	output(:,11) = convert_Kp( temp_data(:,39) ); % 'Kp' yeah bad stuff ~#
+	output(:,12) = temp_data(:,36); % 'E_field' calculated by OMNI ~mV/m
+    output(:,13) = - temp_data(:,25) .* cos(temp_data(:,11)) .* cos(temp_data(:,12)) .*temp_data(:,17) *1e-3; % 'vxBz' E-field due to vx (different to E_field!!) ~mV/m
+	output(:,14) = - temp_data(:,25) .* cos(temp_data(:,11)) .* cos(temp_data(:,12)); % vx ~km /sec
     
     mlts = read_in_mlt_midnight( data_dir, station );
     
@@ -98,6 +103,8 @@ function omni_data = read_in_omni_data( data_dir, station, years )
 	bad_data = bad_data | output(:,6) >= 999;
 	bad_data = bad_data | output(:,7) >= 999;
 	bad_data = bad_data | output(:,8) >= 999;
+	bad_data = bad_data | output(:,9) > 360;
+	bad_data = bad_data | output(:,9) < 0;
     if save_removed %check what we've thrown out
         removed_dates = dates(bad_data,:);
         removed = output(bad_data,:);
@@ -124,7 +131,11 @@ function omni_data = read_in_omni_data( data_dir, station, years )
     
     %output(:,3) = convert_Kp( output(:,3) );
     
-    omni_data = struct('dates',num2cell(output(:,1)),'speed',num2cell(output(:,2)),'pressure',num2cell(output(:,3)),'Np',num2cell(output(:,4)),'sigma_v',num2cell(output(:,5)),'Bz',num2cell(output(:,6)),'Ma',num2cell(output(:,7)),'Mm',num2cell(output(:,8)));
+    omni_data = struct('dates',num2cell(output(:,1)),'speed',num2cell(output(:,2)),...
+		'pressure',num2cell(output(:,3)),'Np',num2cell(output(:,4)),'sigma_v',num2cell(output(:,5)),...
+		'Bz',num2cell(output(:,6)),'Ma',num2cell(output(:,7)),'Mm',num2cell(output(:,8)),...
+		'phi',num2cell(output(:,9)),'theta',num2cell(output(:,10)),'Kp',num2cell(output(:,11)),...
+		'E_field',num2cell(output(:,12)),'vxBz', num2cell(output(:,13)),'vx',num2cell(output(:,14)));
     save( f_to_save, 'omni_data' ) ;
     
     if save_removed

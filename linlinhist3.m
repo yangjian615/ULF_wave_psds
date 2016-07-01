@@ -1,9 +1,11 @@
 % gets the histogram, fixing MATLAB bugs
+% note that pcolor removes a column and a row and uses bins/edges weirdly. See your pcolor note off internet.
 
-function [n,xedges,yedges,xb,yb,n_flat,n1] = linlinhist3( lindata1, lindata2, nbins )
+function [n,xedges,yedges] = linlinhist3( lindata1, lindata2, nbins )
 
-		xedges = linspace(min(lindata1)-1,max(lindata1)+1,nbins(1));
-		yedges = linspace(min(lindata2)-1,max(lindata2)+1,nbins(2));
+	
+		xedges = linspace(min(lindata1),max(lindata1),nbins(1)+1);
+		yedges = linspace(min(lindata2),max(lindata2),nbins(2)+1);
 			
 		linsize1 = size(lindata1);
 		linsize2 = size(lindata2);
@@ -17,10 +19,12 @@ function [n,xedges,yedges,xb,yb,n_flat,n1] = linlinhist3( lindata1, lindata2, nb
 			
 		n = hist3([lindata1,lindata2],'Edges',{xedges yedges});% hold on;
 		
+		
 		% get rid of stupid extra empy bins that are confusing
 		n = n(1:nbins(1),1:nbins(2));
 
-		n_flat = reshape(n,[],1);
-		n1 = n';
-		[xb,yb] = meshgrid(xedges,yedges); % for plotting, if you want
+		%n_flat = reshape(n,[],1);
+		%n1 = n';
+		%[xb,yb] = meshgrid(xedges,yedges); % for plotting, if you want
+		%disp(max(xb));
 end

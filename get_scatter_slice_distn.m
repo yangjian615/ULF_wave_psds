@@ -29,14 +29,7 @@ function [] = get_scatter_slice_distn( use_data, sf,num_slices )
 	end
 	
 	if isempty(sf)
-		f_slices = quantile(linspace(f_lo,f_hi,100),num_slices);
-	
-		% find freqs you want to do slices of
-		for sl_count = [1:length(f_slices)]
-			closest_val = min(abs(freqs - f_slices(sl_count)));
-			closest_ind = find( abs(freqs - f_slices(sl_count)) == closest_val) ;
-			f_slices(sl_count) = freqs(closest_ind);
-		end
+		f_slices = get_sample_freqs(num_slices,freqs,[f_lo,f_hi]);
 	else
 		f_slices = [sf];
 	end

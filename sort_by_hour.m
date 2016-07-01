@@ -69,8 +69,8 @@ function [] = sort_by_hour( data_dir, station, years, months  )
 				
 				% replace end-hour nans with zeros in preparation for fix_moved_hours
 				data_size = size(data);
-				bad_data = isnan(data(:,2,1));
-				temp = data(~bad_data,:,1);
+				bad_data = isnan(data(:,2,1)); %this should really check across whole row not just one value
+				temp = data(~bad_data,:,1); 
 				temp_size = size(temp);
 				data(:,:,1) = zeros(720,10);
 				data(1:temp_size(1),:,1) = temp;	

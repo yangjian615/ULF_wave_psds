@@ -2,7 +2,7 @@
 
 function [] = plot_power_ofield_scatter( data, gen_opts,freq_opts, nbins )
 
-	wrapper_power_ofield_scatter(data,gen_opts,freq_opts,nbins,@guts_plot_power_ofield_scatter);
+	wrapper_power_ofield_scatter(data,gen_opts,freq_opts,nbins,[],@guts_plot_power_ofield_scatter);
 	
 	
 end
