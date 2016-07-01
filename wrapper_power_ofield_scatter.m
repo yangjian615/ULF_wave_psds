@@ -24,7 +24,6 @@ function [output_struct] = wrapper_power_ofield_scatter( data, gen_opts, freq_op
 	end
 	
 	coord = gen_opts.coord;
-	pop = gen_opts.pop;
 	o_f = gen_opts.of;
 	f_lim = gen_opts.f_lim;
 	power_lims = gen_opts.pop_lim;
@@ -76,7 +75,7 @@ function [output_struct] = wrapper_power_ofield_scatter( data, gen_opts, freq_op
 		this_f = f_slices(f_count);
 		
 		
-		power = cell2mat({data.(sprintf('%s%s',coord,pop))});
+		power = cell2mat({data.(sprintf('%s%s',coord,'ps'))});
 		power = power( abs(this_f - freqs) < f_tol ,:);
 		
 		
