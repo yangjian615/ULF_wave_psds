@@ -46,8 +46,9 @@ function [output] = guts_plot_mean_var_scatter_slice_normal_fits( fn_st )
 		end
 	end
 	
+	warning('untidy code');
 	% on last time, make the legend  to use later- find centre of SW speed bins
-	if fn_st.f_count == fn_st.freq_opts.nfreqs %show legend on last iteration in last subplot
+	if true%fn_st.f_count == fn_st.freq_opts.nfreqs %show legend on last iteration in last subplot
 		bin_speeds = {};
 		%mean_for_leg = [];
 		for b_count = [1:length(xcentres)]
@@ -130,8 +131,22 @@ function [output] = guts_plot_mean_var_scatter_slice_normal_fits( fn_st )
 	elseif strcmp(nfit_opts,'qqplots')
 		fignum = fn_st.sector;
 		figure(fignum);
+		
 		subplot(pl_rows,pl_cols,fn_st.f_count); 
-		set(0,'DefaultAxesColorOrder',parula(fn_st.nbins(1)));
+		
+		% don't use the usual suplotting here. We want subplots of subplots so calculate it all first.
+		[qqrows,qqcols] = picknumsubplots(fn_st.nbins(1)); % how many in our sub-subplot?
+		space = 0.2;
+		
+		plot_posns = [1:fn_st.nbins(1)];
+		axes_tags = getCustomAxesPos(qqrows,qqcols,plot_posns,space);
+		axes_tags_list = reshape(axes_tags,[],1);
+		% I thought getCustomPosAxes worked by putting subplots into a figure but it appears to work for a subplot 
+		% too. This makes it much easier to use!!
+			
+		
+		
+		set(0,'DefaultAxesColorOrder',copper(fn_st.nbins(1)));
 		for pl_count = [1:length(fit_pdfs)]
 			
 			% sort out correct colouring
@@ -140,8 +155,12 @@ function [output] = guts_plot_mean_var_scatter_slice_normal_fits( fn_st )
 			this_col = all_col(pl_count,:);
 			
 			if ~isempty(fit_pdfs(pl_count).pd)
+				
+				this_ax = axes_tags_list(pl_count);
 				hold on;
+				set(figure(fignum),'CurrentAxes',this_ax);
 				hq = qqplot(sort(n_norm(pl_count,:)),fit_pdfs(pl_count).pdf_scaled);
+				title(sprintf('freq %d, bin %s',fn_st.this_f,bin_speeds{pl_count}));
 				warning('>Not sure these options are right yet, check you indices<');
 				
 				
