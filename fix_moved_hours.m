@@ -101,7 +101,7 @@ function [] = fix_moved_hours( data_dir, station, window_length, data_t_res )
 						data = temp_data;
 					end
                 else
-                    disp('Nothing to move between files');
+                    disp('Nothing to move between files - still need to check end of month');
                 end
 
 
@@ -110,15 +110,17 @@ function [] = fix_moved_hours( data_dir, station, window_length, data_t_res )
                 extra_data = data(:,:,wrong_month);
 				% BUG FIX: REMOVE ANY NON-FULL SLICES HERE. CHECK FIRST SLICE ONLY?
 				
-				% check the first hour - may be correct month but still not full
-				if ~wrong_month(1)
-					first_slice = data(:,:,1);
-					if sum( sum(first_slice,2) == 0 ) > 0
-						wrong_month(1) = true;
-						disp(sprintf('Removing part-slice %s',char(datetime(datevec(data(1,1,1))))));
-						plot(data(:,8,1));
+				% check the first and last hours - may be correct month but still not full
+				for data_ind = [1 size(data,3)]
+					if ~wrong_month(data_ind)
+						first_slice = data(:,:,data_ind);
+						if sum( sum(first_slice,2) == 0 ) > 0
+							wrong_month(data_ind) = true;
+							disp(sprintf('Removing part-slice %s',char(datetime(datevec(data(1,1,1))))));
+							%plot(data(:,8,data_ind)); hold on; 
+						end
+						clearvars('first_slice');
 					end
-					clearvars('first_slice');
 				end
 				
 				data = data(:,:,~wrong_month);
