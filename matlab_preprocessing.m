@@ -24,14 +24,17 @@
 
 function [] = matlab_preprocessing()
     
-    stations = {'GILL','PINA','FCHU','PINA'};%{'GILL','FCHU','ISLL','PINA'};
-    years = [1990:2005];
+    stations = {'GILL'};%,'PINA','FCHU','ISLL'};%{'GILL','FCHU','ISLL','PINA'};
+    years = [1990:1992];%[1990:2005];
     months = [1:12];
     data_dir = '/net/glusterfs_phd/scenario/users/mm840338/data_tester/data/';%strcat(pwd,sprintf('/data/'));
-    
-    do_omni = true;
+    window_length = 60*60; % in seconds, should be a multiple of minutes? then use 1min OMNI?
+	data_t_res = 5; %every 5 seconds using CANOPUS data, will need to change for CARISMA
+	
+	
+    do_omni = false;
   
-    do_prep = true;
+    do_prep = false;
     do_thresh = true; interpolate_missing = true; save_removed = false; %saving the removed makes twice as long
     do_hr_sort = true;
     do_hr_fix = true; %should always run if re-sorting by hour 
@@ -49,6 +52,10 @@ function [] = matlab_preprocessing()
 	day_ranges = [ 3, 9 ; 9, 15; 15, 21 ;21,3];
     
 		
+	% checks
+	if window_length > 28*24*60*60
+		error('Cant currently have windows larger than a month');
+	end
     
     for station_cell = stations
 		station = char(station_cell);
@@ -70,31 +77,34 @@ function [] = matlab_preprocessing()
 		
 		if do_omni
 			tic
-			read_in_omni_data( data_dir, station, years );
+			read_in_omni_data( data_dir, station, years, window_length, data_t_res );
+			if mod(window_length,60^2) ~= 0 % fill in gaps if using 1min data
+				interpolate_omni( data_dir, station, years, [1:12], window_length );
+			end
 			toc
 		end
 		
 		if do_prep 
 			tic
-			data_prep( data_dir, station, years, months );
+			data_prep( data_dir, station, years );
 			toc
 		end
 		
 		if do_thresh
 			tic
-			do_thresholding( data_dir, station, years, months, z_low, z_high, interpolate_missing, save_removed );
+			do_thresholding( data_dir, station, years, months, z_low, z_high, interpolate_missing, save_removed, window_length/data_t_res );
 			toc
 		end
 		
 		if do_hr_sort
 			tic
-			sort_by_hour( data_dir, station, years, months );
+			sort_by_hour( data_dir, station, years, months, window_length, data_t_res );
 			toc
 		end
 		
 		if do_hr_fix
 			tic
-			fix_moved_hours( data_dir, station );
+			fix_moved_hours( data_dir, station, window_length, data_t_res );
 			toc
 		end
 		

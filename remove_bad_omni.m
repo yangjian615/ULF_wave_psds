@@ -28,8 +28,8 @@ function [] = remove_bad_omni( data_dir,station,years,months)
 				disp(word_temp);
 				load(f_to_open);
 				
-				[y m d h] = datevec( data(1,1,:) );
-				hour_dates = datenum( [y' m' d' h' zeros(size(y))' zeros(size(y))']  );
+				[y m d h mins secs] = datevec( data(1,1,:) ); %converting omni hour dates for me to use. This will change if OMNI hourss change
+				hour_dates = datenum( [y' m' d' h' mins' secs']  );
 				
 				omni_dates = cell2mat({omni_data.dates});
 				

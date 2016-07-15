@@ -8,8 +8,9 @@
 % and sorting by hours, so expect to do on many slices.
 
 % Also removes any incomplete slices.
+% chunk_length is how long to check for interpolations. I think I've just fed in the number of data points in each window
 
-function [] = do_thresholding( data_dir, station, years, months, z_low_lim, z_high_lim,interpolate_missing, save_removed )
+function [] = do_thresholding( data_dir, station, years, months, z_low_lim, z_high_lim,interpolate_missing, save_removed, chunk_length )
     disp('Thresholding data');
 
     
@@ -75,81 +76,94 @@ function [] = do_thresholding( data_dir, station, years, months, z_low_lim, z_hi
                 % interpolate anything missing if there is data left
                 if interpolate_missing & min(data_size) > 0
                     disp('Attempting to interpolate missing data');
-                    max_month_size = (31*24+7)*60*60/5; %got to start earlier as rotated to MLT, also have to have every second not just every five due to data
-                    to_fix = nan(max_month_size+num_rows,10);
-                    fixed = nan(max_month_size,10);
-                    
-                    to_fix(1:num_rows,:) = data;
-                    indices = [1:max_month_size];
-                    
-                    basis = ones(max_month_size,1);
-                    y = data(1,2)*basis;
-                    m = data(1,3)*basis;
-                    d = data(1,4)*basis;
-                    h = data(1,5)*basis;
-                    mins = 0*basis;
-                    s = [0:max_month_size-1]'*5; %have to have every second not every five for mismatches when resetting data
-                    
-
-                    % stickk all the datenums together, ones from data first
-                    to_fix(num_rows+1:num_rows+max_month_size,1) = datenum([y m d h mins s]);
-                    to_fix = sortrows(to_fix,1);
-                    
-                    % only keep unique ones, check only have one value at each time
-                    [unique_dates,unique_date_indices] = unique(to_fix(:,1));
-                    fixed = to_fix(unique_date_indices,:);
 					
+					if false % old, replacing with make_gappy_matrix_by_date 
+						max_month_size = (31*24+7)*60*60/5; %got to start earlier as rotated to MLT, also have to have every second not just every five due to data
+						to_fix = nan(max_month_size+num_rows,10);
+						fixed = nan(max_month_size,10);
+						
+						to_fix(1:num_rows,:) = data;
+						indices = [1:max_month_size];
+						
+						basis = ones(max_month_size,1);
+						y = data(1,2)*basis;
+						m = data(1,3)*basis;
+						d = data(1,4)*basis;
+						h = data(1,5)*basis;
+						mins = 0*basis;
+						s = [0:max_month_size-1]'*5; %have to have every second not every five for mismatches when resetting data
+						
+
+						% stickk all the datenums together, ones from data first
+						to_fix(num_rows+1:num_rows+max_month_size,1) = datenum([y m d h mins s]);
+						to_fix = sortrows(to_fix,1);
+						
+						% only keep unique ones, check only have one value at each time
+						[unique_dates,unique_date_indices] = unique(to_fix(:,1));
+						fixed = to_fix(unique_date_indices,:);
+						
+						
+
+						% check size
+						if max(size(fixed)) ~= max_month_size
+							disp(size(fixed));
+							error('>> You havent got the right size matrix <<');
+						end
+						
+						% cut off beginning and end, change value of
+						% max_month_size accordingly
+						cut_off_index = 1;
+						while sum(isnan(fixed(cut_off_index,:))) >0 %will break as soon as bigger than fixed
+							cut_off_index = cut_off_index +1;
+						end
+						fixed_length = max_month_size;
+						while sum(isnan(fixed(fixed_length,:))) > 0
+							fixed_length = fixed_length - 1;
+						end
+						fixed = fixed(cut_off_index:fixed_length,:);
+						fixed_length = fixed_length - cut_off_index + 1;
+                    end
+					if false % old one moving to new fn
+						% find bad places
+						good_data = ~isnan(fixed(:,8:10));
+						try_fix = ~good_data; % will now only do it if not too many in an hour
+						
+				  
+						% see whether wort attempting to fix
+						for i = [1:floor(fixed_length/720)]
+							endpoint = min( [720*(i) fixed_length] );
+							hr_indices = [720*(i-1)+1:endpoint];
+							if sum(sum(try_fix(hr_indices,:))) > 30
+								try_fix(hr_indices,:) = false;
+							end
+						end
+						
+						disp(sprintf('Trying to fix %d data points this month',sum(sum(try_fix))));
+						
+		   
+						% fix it
+						for i = [1:3]
+							col = i+7;
+							this_try_fix = try_fix(:,i);
+							this_good_data = good_data(:,i);
+							fixed(this_try_fix,col) = interp1(indices(this_good_data),fixed(this_good_data,col),indices(this_try_fix));
+							fixed(this_try_fix,2:7) = datevec(fixed(this_try_fix,1)); 
+						end
+
+						
+						gappy_data = sum(isnan(fixed(:,8:10)),2);
+						data = fixed(~gappy_data,:);
+                    end
 					
-
-                    % check size
-                    if max(size(fixed)) ~= max_month_size
-                        disp(size(fixed));
-                        error('>> You havent got the right size matrix <<');
-                    end
-                    
-                    % cut off beginning and end, change value of
-                    % max_month_size accordingly
-                    cut_off_index = 1;
-                    while sum(isnan(fixed(cut_off_index,:))) >0 %will break as soon as bigger than fixed
-                        cut_off_index = cut_off_index +1;
-                    end
-                    fixed_length = max_month_size;
-                    while sum(isnan(fixed(fixed_length,:))) > 0
-                        fixed_length = fixed_length - 1;
-                    end
-                    fixed = fixed(cut_off_index:fixed_length,:);
-					fixed_length = fixed_length - cut_off_index + 1;
-                    
-                    % find bad places
-                    good_data = ~isnan(fixed(:,8:10));
-                    try_fix = ~good_data; % will now only do it if not too many in an hour
-                    
-              
-                    % see whether wort attempting to fix
-                    for i = [1:floor(fixed_length/720)]
-                        endpoint = min( [720*(i) fixed_length] );
-                        hr_indices = [720*(i-1)+1:endpoint];
-                        if sum(sum(try_fix(hr_indices,:))) > 30
-                            try_fix(hr_indices,:) = false;
-                        end
-                    end
-                    
-                    disp(sprintf('Trying to fix %d data points this month',sum(sum(try_fix))));
-                    
-       
-                    % fix it
-                    for i = [1:3]
-                        col = i+7;
-                        this_try_fix = try_fix(:,i);
-                        this_good_data = good_data(:,i);
-                        fixed(this_try_fix,col) = interp1(indices(this_good_data),fixed(this_good_data,col),indices(this_try_fix));
-                        fixed(this_try_fix,2:7) = datevec(fixed(this_try_fix,1)); 
-                    end
-
-                    
-                    gappy_data = sum(isnan(fixed(:,8:10)),2);
-                    data = fixed(~gappy_data,:);
-                   
+					% data should already be every five secs so no fancy date checking needed
+					to_fix = make_gappy_matrix_by_date(data,5);
+					
+					warning('Dodgy method for choosing size of gaps to fill!!');
+					data = interpolate_fix( to_fix, [8:10], chunk_length, 3*ceil(chunk_length/75) );
+					
+					% now fill in datevec cols
+					data(:,2:7) = datevec(data(:,1));
+					
                 end
                     
 

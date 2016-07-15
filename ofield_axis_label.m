@@ -10,6 +10,8 @@ function [out_str] = ofield_axis_label( ofield )
 		out_str = 'Proton number density, #N cm^{-3}';
 	elseif strcmp(ofield,'Bz');
 		out_str = ('Bz, (nT)');
+	elseif strcmp(ofield,'pressure')
+		out_str = ('Pressure, nPa');
 	elseif strcmp(ofield,'vxBz')
 		out_str = 'Coupling function v_x B_z, mV m^{-1}';
 	elseif strcmp(ofield,'sigma_v')
