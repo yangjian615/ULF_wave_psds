@@ -14,6 +14,7 @@
 function [] = sort_by_hour( data_dir, station, years, months, window_length, data_t_res  )
     disp('Sorting by hour');
 	window_data_num = window_length/data_t_res;
+	win_mins = window_length/60;
 	
 	max_month_size = (31*24+7)*window_length*data_t_res;
 	basis = ones(max_month_size,1);
@@ -23,8 +24,8 @@ function [] = sort_by_hour( data_dir, station, years, months, window_length, dat
     
     for year = years
         for month = months
-            f_to_load = strcat(data_dir,sprintf('/thresholded/%s_%d_%d',station,year,month));
-            f_to_save = strcat(data_dir,sprintf('/sorted1/%s_%d_%d',station,year,month));
+            f_to_load = strcat(data_dir,sprintf('/thresholded/%s_%d_%d_%d',station,win_mins,year,month));
+            f_to_save = strcat(data_dir,sprintf('/sorted1/%s_%d_%d_%d',station,win_mins,year,month));
             
             if  exist(strcat(f_to_load,'.mat')) == 2  
                 word_temp = sprintf('sort_by_hour: Doing year %d, month %d',year, month);

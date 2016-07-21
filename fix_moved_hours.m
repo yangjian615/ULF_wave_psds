@@ -18,13 +18,14 @@
 
 function [] = fix_moved_hours( data_dir, station, window_length, data_t_res )
     disp('Glueing together hours split when converting to MLT');
-    window_data_num = window_length/data_t_res;
+    win_mins = window_length/60;
+	window_data_num = window_length/data_t_res;
 	
     extra_data = [];
     for year = [2005:-1:1990]
         for month = [12:-1:1]
-            f_to_load = strcat(data_dir,sprintf('/sorted1/%s_%d_%d',station,year,month));
-            f_to_save = strcat(data_dir,sprintf('/sorted2/%s_%d_%d',station,year,month));
+            f_to_load = strcat(data_dir,sprintf('/sorted1/%s_%d_%d_%d',station,win_mins,year,month));
+            f_to_save = strcat(data_dir,sprintf('/sorted2/%s_%d_%d_%d',station,win_mins,year,month));
             
 %             if exist(strcat(f_to_load,'.mat')) ~= 2 
 %                 disp('File nonexistent. Skip this month.');

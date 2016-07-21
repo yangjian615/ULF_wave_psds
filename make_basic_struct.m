@@ -28,6 +28,7 @@ function [out_struct] = make_basic_struct(st_name)
 		out_struct.station = 'GILL';
 		out_struct.y = [1990:2004];
 		out_struct.m = [1:12];
+		out_struct.win_mins = 60;
 	end
 	
 end

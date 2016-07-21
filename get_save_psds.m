@@ -2,14 +2,15 @@
 % Does the calculations for each month, then saves the PSD and omni data
 % away. Does not return the frequency axis.
 
-function [] = get_save_psds( data_dir, station, years, months )
+function [] = get_save_psds( data_dir, station, years, months, window_length )
 
     disp('Finding the power spectrum and PSDs');
+	win_mins = window_length/60;
 	
     for year = years
         for month = months
-            f_to_load = strcat(data_dir,sprintf('ready/%s_%d_%d',station,year,month));
-            f_to_save = strcat(data_dir, sprintf('psds/%s_%d_%d',station,year,month));
+            f_to_load = strcat(data_dir,sprintf('ready/%s_%d_%d_%d',station,win_mins,year,month));
+            f_to_save = strcat(data_dir, sprintf('psds/%s_%d_%d_%d',station,win_mins,year,month));
 			
 			
             if exist(strcat(f_to_load,'.mat')) ~= 2 

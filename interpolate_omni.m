@@ -4,13 +4,14 @@
 function [] = interpolate_omni( data_dir, station, years, months, window_length )
 
 	data_folder = strcat(data_dir,'omni_1min/');
+	win_mins = window_length/60;
 	for year = years	
 		for month = months
 		
-			f_to_open = strcat(data_folder,sprintf('prepped/%s_omni_1min_%d_%d',station,year,month));
+			f_to_open = strcat(data_folder,sprintf('prepped/%s_omni_1min_%d_%d_%d',station,win_mins,year,month));
 			load(f_to_open);
 			
-			f_to_save = strcat(data_folder,sprintf('fixed/%s_omni_1min_%d_%d',station,year,month));
+			f_to_save = strcat(data_folder,sprintf('fixed/%s_omni_1min_%d_%d_%d',station,win_mins,year,month));
 			
 			o_fields = fieldnames(omni_data);
 			o_length = length(omni_data);

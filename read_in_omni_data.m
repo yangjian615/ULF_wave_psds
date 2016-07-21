@@ -1,18 +1,14 @@
-% This reads in the OMNI data and keeps the columns of year, day, hour,
-% bulk flow speed and Kp value.
-% DATE      SW SPEED        Kp VALUE        E-AMPLITUDE
-% DATE      SW SPEED        Kp VALUE        E-AMPLITUDE
-% DATE      SW SPEED        Kp VALUE        E-AMPLITUDE
-% DATE      SW SPEED        Kp VALUE        E-AMPLITUDE
-% DATE      SW SPEED        Kp VALUE        E-AMPLITUDE
+% This reads in OMNI data (from ASCII format) and puts it in a structure with
+% an entry for each data time point. We use low res omni if the length is a multiple of hours, 
+% high res otherwise.
 
-% This should also convert to magnetic local time and round down the hour.
-% History:
-% 16-01-26 Changes for test data: read in different data for TEST station
-% 16-01-27 Changes for test data: add in conversion for dates. Move dates = [y 0 d 0 0 0] to after this.
-% 16-02-01 Fix dates mistakes for test data. And possibly for a ll data?
+% Code from saving "removed" bad data remains but probably doesn't work any more.
 
-% Now for 1min data it's in months. Treat the same as CANOPUS?
+% To do:
+% recalulate phi, theta using vx vy vz
+% put in Kp? Does it make sense for these length windows?
+% variability pars, eg sigma-v
+% what data is bad for new omni?
 
 function omni_data = read_in_omni_data( data_dir, station, years, window_length, data_t_res )
 
@@ -50,7 +46,7 @@ function omni_data = read_in_omni_data( data_dir, station, years, window_length,
 		if strcmp(station,'TEST')
 			f_to_open = strcat(data_folder,'TEST_omni_all.txt');
 		end	
-		f_to_save = strcat(data_folder,sprintf('%s_omni',station));
+		f_to_save = strcat(data_folder,sprintf('%s_omni_%d',station,window_length/60));
 		f_to_save2 = strcat(data_folder,sprintf('removed_%s_omni',station));
 		temp_data = dlmread(f_to_open);
 		
@@ -62,14 +58,12 @@ function omni_data = read_in_omni_data( data_dir, station, years, window_length,
 		dates = [y ones(size(y)) d h zeros(size(y)) zeros(size(y)) ]; 
 		
 		%convert to correct format, necessary for TEST data
-		if true %strcmp(station,'TEST') I THINK YOU FOUND YOUR BUG
-			dates = datevec(datenum(dates));
-			y = dates(:,1);
-			m = dates(:,2);
-			d = dates(:,3);
-			h = dates(:,4);
-			dates = [y m d h zeros(size(y)) zeros(size(y)) ];
-		end
+		dates = datevec(datenum(dates));
+		y = dates(:,1);
+		m = dates(:,2);
+		d = dates(:,3);
+		h = dates(:,4);
+		dates = [y m d h zeros(size(y)) zeros(size(y)) ];
 			
 		
 		our_years = y >= 1990 & y <= 2004;
@@ -82,7 +76,7 @@ function omni_data = read_in_omni_data( data_dir, station, years, window_length,
 		temp_data = temp_data(our_years,:);
 		output = zeros(sum(our_years),4);
 		
-		% fill i the data part
+		% fill in the data part
 		output(:,2) = temp_data(:,25); % 'speed' the SW speed ~km/sec
 		output(:,3) = temp_data(:,29); % 'pressure' the flow pressure ~nPa
 		output(:,4) = temp_data(:,24); % 'Np' the proton density, ~#N/cm^3
@@ -93,7 +87,7 @@ function omni_data = read_in_omni_data( data_dir, station, years, window_length,
 		output(:,9) = temp_data(:,26); % 'phi' longitudinal angle (v off of x axis onto GSE +/-y) ~Deg
 		output(:,10) = temp_data(:,27); % 'theta' latitudinal angle (v off of x axis onto GSE +/-z) ~Deg
 		output(:,11) = convert_Kp( temp_data(:,39) ); % 'Kp' yeah bad stuff ~#
-		output(:,12) = temp_data(:,36); % 'E_field' calculated by OMNI ~mV/m
+		output(:,12) = temp_data(:,36); % 'E_field' ~mV/m
 		output(:,13) = - temp_data(:,25) .* cos(temp_data(:,26)) .* cos(temp_data(:,27)) .*temp_data(:,17) *1e-3; % 'vxBz' E-field due to vx (different to E_field!!) ~mV/m
 		output(:,14) = - temp_data(:,25) .* cos(temp_data(:,26)) .* cos(temp_data(:,27)); % vx ~km /sec
 		
@@ -153,11 +147,12 @@ function omni_data = read_in_omni_data( data_dir, station, years, window_length,
 		for year = years
 			for month = [1:12]
 				f_to_open = strcat(data_folder,sprintf('omni_min%d%02d.asc',year,month)); 
+				temp_data = [];
 				temp_data = dlmread(f_to_open);
 				
-				f_to_save = strcat(data_folder,sprintf('prepped/%s_omni_1min_%d_%d',station,year,month));
+				f_to_save = strcat(data_folder,sprintf('prepped/%s_omni_1min_%d_%d_%d',station,window_length/60,year,month));
 		
-				output = zeros(max(size(temp_data)),14);
+				output = nan(max(size(temp_data)),14);
 			
 				y = temp_data(:,1);
 				d = temp_data(:,2);
@@ -165,16 +160,10 @@ function omni_data = read_in_omni_data( data_dir, station, years, window_length,
 				min = temp_data(:,4);
 				dates = [y ones(size(y)) d h min zeros(size(y)) ]; 
 				
-				%convert to correct format, necessary for TEST data
-				if true %strcmp(station,'TEST') I THINK YOU FOUND YOUR BUG
-					dates = datevec(datenum(dates));
-					y = dates(:,1);
-					m = dates(:,2);
-					d = dates(:,3);
-					h = dates(:,4);
-					dmin = temp_data(:,4);
-					dates = [y ones(size(y)) d h min zeros(size(y)) ]; 
-				end
+				% recalculate
+				dates = datevec(datenum(dates));
+				
+				warning('Not surte were using dates properly');
 					
 		
 				
@@ -182,14 +171,11 @@ function omni_data = read_in_omni_data( data_dir, station, years, window_length,
 				output(:,2) = temp_data(:,22); % 'speed' the SW speed ~km/sec
 				output(:,3) = temp_data(:,28); % 'pressure' the flow pressure ~nPa
 				output(:,4) = temp_data(:,26); % 'Np' the proton density, ~#N/cm^3
-				%output(:,5) = temp_data(:,?); % 'sigma_v' the variablility in speed sigma_v ~ km/sec
 				output(:,5) = temp_data(:,19); % 'Bz' Bz (GSM) ~nT
 				output(:,6) = temp_data(:,31); % 'Ma' Alfven mach number ~#
 				output(:,7) = temp_data(:,46); % 'Mm' Magentosonic mach number ~#
-				%output(:,9) = temp_data(:,26); % 'phi' longitudinal angle (v off of x axis onto GSE +/-y) ~Deg
-				%output(:,10) = temp_data(:,27); % 'theta' latitudinal angle (v off of x axis onto GSE +/-z) ~Deg
-				%output(:,11) = convert_Kp( temp_data(:,39) ); % 'Kp' yeah bad stuff ~#
-				output(:,8) = temp_data(:,29); % 'E_field' calculated by OMNI ~mV/m
+				
+				output(:,8) = temp_data(:,29); % 'E_field'  ~mV/m
 				%output(:,13) = - temp_data(:,25) .* cos(temp_data(:,26)) .* cos(temp_data(:,27)) .*temp_data(:,17) *1e-3; % 'vxBz' E-field due to vx (different to E_field!!) ~mV/m
 				%output(:,14) = - temp_data(:,25) .* cos(temp_data(:,26)) .* cos(temp_data(:,27)); % vx ~km /sec
 				output(:,9) = temp_data(:,22); % 'vx_gse' ~km /s
@@ -199,9 +185,28 @@ function omni_data = read_in_omni_data( data_dir, station, years, window_length,
 				output(:,13) = temp_data(:,36); % 'yBSN' in GSE, ~Re
 				output(:,14) = temp_data(:,37); % 'zBSN' in GSE, ~Re
 				
-				% To do:
-				% recalulate phi, theta using vx vy vz
-				% put in Kp? Does it make sense for these length windows?
+				% Notes on OMNI 1-min
+				% http://omniweb.gsfc.nasa.gov/html/HROdocum.html
+				% They use bow shock model of Farris and Russell (1994) and magnetopause model of Shue et al (1997)
+				% to determine where bow shock will be when phase front reaches it. The data is shifted to here (location given 
+				% in data)
+				%
+				% Phase fronts that would overtake/reach each other are both included in the shifted data. No assumption is made
+				% on how they interact or what we would see. The parameter "duration between observing times", DBOT, should indicate when 
+				% these occur. There is an example of where this is very significant as it means plasma averages are mixed up.
+				%
+				% The 1min time is teh start of each minute.
+				%
+				% I'm not sure whether the E-fields in both high and low res are measured or calculated.
+				%
+				
+		
+				
+				
+				
+				
+				
+				
 				
 				mlts = read_in_mlt_midnight( data_dir, station );
 				
@@ -229,9 +234,10 @@ function omni_data = read_in_omni_data( data_dir, station, years, window_length,
 				if do_mlt_conversion
 					dates(:,4) = dates(:,4) - mlts( mlts(:,1)== year, 2 );
 				end
-				dates(:,5) = floor(dates(:,5));
+				dates(:,5) = floor(dates(:,5)); % just tidying up from MLT conversion I think
 				
-				output(:,1) = datenum( dates );
+				
+				output(:,1) = datenum( dates ); % do you need an extra datenum(datevec(    )) here to counter changes??
 				
 				%output(:,3) = convert_Kp( output(:,3) );
 				
