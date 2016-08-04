@@ -11,104 +11,69 @@
 %16-02-03 Save and load data from slightly different place
 
 
-function [] = sort_by_hour( data_dir, station, years, months, window_length, data_t_res  )
-    disp('Sorting by hour');
-	window_data_num = window_length/data_t_res;
-	win_mins = window_length/60;
-	
-	max_month_size = (31*24+7)*window_length*data_t_res;
-	basis = ones(max_month_size,1);
-	s = [0:max_month_size-1]'*data_t_res; %have to have every second not every five for mismatches when resetting data
-    month_basis = horzcat(basis,basis,basis,basis,0*basis,s);
-	basis_m = month_basis;
+function [output_data] = sort_by_hour( data, get_opts, data_t_res  )
     
-    for year = years
-        for month = months
-            f_to_load = strcat(data_dir,sprintf('/thresholded/%s_%d_%d_%d',station,win_mins,year,month));
-            f_to_save = strcat(data_dir,sprintf('/sorted1/%s_%d_%d_%d',station,win_mins,year,month));
-            
-            if  exist(strcat(f_to_load,'.mat')) == 2  
-                word_temp = sprintf('sort_by_hour: Doing year %d, month %d',year, month);
-                disp(word_temp);
-                load(f_to_load); %now using matrix 'data'
+	ptag = get_ptag();
+	do_print(ptag,2,'sort_by_hor: entering function');
+	
+	window_length = get_opts.win_mins*60; % window length in seconds
+	window_data_num = window_length/data_t_res; % number of data points in each window
+	
 
+	max_month_secs = (31*24+7)*60*60;
+	
+	
+	% set first time in month - start on the hour
+	first_time = datevec(data(1,1));
+	first_time(5:6) = [0 0];
+	
+	% you need extra windows to accommodate this shifting back to first full houradd these extra seconds
+	max_month_windows = ceil( (max_month_secs + abs(etime(first_time, datevec(data(1,1))))) / window_length ); % get integer number of windows in month
+	
+	% set last time in month, add to end of data matrix to get correct 
+	last_time = first_time;
+	last_time(6) = last_time(6) + (max_month_windows*window_length) - data_t_res; 
+	% max no. of windows  x no. secs n each, minus one data point as one already exists
+	% rounded up to max no. of windows rather than to data_t_res - but make_gappy_matrix will check time resolution holds
+	
+	data_and_ends = vertcat([datenum(first_time) nan(1,9)],data,[datenum(last_time) nan(1,9)]);
+	sorted_data = make_gappy_matrix_by_date(data_and_ends,data_t_res);
+	
+	% make datevec columns if necessary - we didn't both to fill out before handing in
+	make_dates = isnan(sorted_data(:,2));
+	sorted_data(make_dates,2:7) = datevec(sorted_data(make_dates,1));
+	
+	
+	% put into slices shape
+	sorted_data = reshape(sorted_data,window_data_num,[],10);
+	sorted_data = permute(sorted_data,[1 3 2]);
+	
+	
+	%% Check for good/ bad data in each slice.
+	bad_data = sum(sum(isnan(sorted_data),2)); % count number of data in each slice
+	
+	% remove endpoints if fully bad and interiors if any nans
+	to_keep = bad_data == 0;
+	to_keep(1,end) = bad_data(1,end) < window_data_num*9;
 
-                data_size = size(data);
-				sorted_data = nan(data_size(1)+max_month_size,10);
-				basis_m = month_basis;
-				basis_m(:,1) = data(1,2)*basis_m(:,1); %year
-				basis_m(:,2) = data(1,3)*basis_m(:,2); %month
-				basis_m(:,3) = data(1,4)*basis_m(:,3); %day
-				basis_m(:,4) = data(1,5)*basis_m(:,4); %hour
-				
-				
-				sorted_data(1:data_size(1),:) = data;
-				sorted_data(data_size(1)+1:max_month_size+data_size(1),1) = datenum(basis_m); % should sort out seconds to hours?
-				sorted_data = sortrows(sorted_data,1);
-				
-				% keep unique ones
-				[unique_dates,unique_date_indices] = unique(sorted_data(:,1));
-				sorted_data = sorted_data(unique_date_indices,:);
-				
-				
-				% put into slices shape
-				sorted_data = reshape(sorted_data,window_data_num,[],10);
-				sorted_data = permute(sorted_data,[1 3 2]);
-				
-				bad_data = sum(sum(isnan(sorted_data),2)); % count number of data in each slice
-				data = sorted_data(:,:, bad_data < window_data_num*9 ); %remove any fully bad slices
-				bad_data = sum(sum(isnan(data),2));
-				bad_data(1) = 0; bad_data(length(bad_data)) = 0; %keep first and last slices anyway
-				data(:,:,bad_data > 0) = [];
-				
-				% replace end-hour nans with zeros in preparation for fix_moved_hours
-				data_size = size(data);
-				bad_data = isnan(data(:,2,1)); %this should really check across whole row not just one value
-				temp = data(~bad_data,:,1); 
-				temp_size = size(temp);
-				data(:,:,1) = zeros(window_data_num,10);
-				data(1:temp_size(1),:,1) = temp;	
-				
-				bad_data = isnan(data(:,2,data_size(3)));
-				temp = data(~bad_data,:,data_size(3));
-				temp_size = size(temp);
-				data(:,:,data_size(3)) = zeros(window_data_num,10);
-				data(1:temp_size(1),:,data_size(3)) = temp;
+	
+	data = sorted_data(:,:,to_keep);
+	
+	
+	% check ends, replace nans with zeros in preparation for fix_moved_hours
+	for slice_ind = [1,size(data,3)];
+		end_slice = data(:,:,slice_ind);
+		end_bad_data = isnan(end_slice);
+		end_slice(end_bad_data) = 0;
+		if sum( sum( end_slice(:,8:10) ) ) > 0
+			data(:,:,slice_ind) = end_slice;
+		else
+			data = data(:,:,([1:size(data,3)] ~= slice_ind));
+		end
+	end
+		
+	
+	output_data = data;
 
-                % for hour = [1:max_hrs]
-
-                    % if min(data_size) > 0        
-                        % top_lim = 720;
-
-                        % if top_lim > data_size(1)
-                            % top_lim = data_size(1);
-                        % end
-                        % %disp(data(1,5));
-
-                        % this_hour = data(1:top_lim,5) == data(1,5);
-                        % hour_data = data(this_hour,:);
-                        % temp_data(1:sum(this_hour),:,hour) = hour_data;
-                        % data(this_hour,:) = [];
-                        % data_size = size(data);
-                    % end
-                % end
-
-                % if min(size(data)) > 0
-                    % disp('Not all data used!');
-                % end
-
-                % debug_data = data;
-
-                % data = temp_data;
-                % empty_slices = sum(sum(data(:,:,:))) == 0;
-                % data(:,:,empty_slices) = [];
-
-                save(f_to_save,'data');
-                %toc
-            end
-        end
-    end
 end
-                    
-           
 

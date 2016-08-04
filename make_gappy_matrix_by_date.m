@@ -2,8 +2,8 @@
 % Originally from do_thresholding code, expanded for omni data. We expect to fix the resultant matrix, hence the name of output variable.
 %
 % Requirements:
-% first column of data is dates. Any formatting of these should already be included (eg rounding to 5secs, or all in 0secs)
-% must supply required resolution in seconds
+% data: first column of data is dates. Any formatting of these should already be included (eg rounding to 5secs, or all in 0secs)
+% t_res: must supply required resolution in seconds
 
 function [to_fix] = make_gappy_matrix_by_date( data, t_res )
 
@@ -19,8 +19,9 @@ function [to_fix] = make_gappy_matrix_by_date( data, t_res )
 	% make the list of all dates including missing ones - add in minutes then convert
 	basis = ones(max_length,1);
 	dates_mat = [first_date(1)*basis first_date(2)*basis first_date(3)*basis first_date(4)*basis first_date(5)*basis first_date(6)*basis];
+	dates_mat(:,6) = dates_mat(:,6) + [0:max_length-1]'*t_res;
 	dates = datenum(dates_mat); dates_mat = datevec(dates); dates = datenum(dates_mat);
-	
+
 	
 	% make empty to stick all together then we can sort and keep unique dates (same as in do_thresholding)
 	to_fix = nan(max_length+d_length,size(data,2)); 
@@ -32,15 +33,13 @@ function [to_fix] = make_gappy_matrix_by_date( data, t_res )
 	to_fix = sortrows(to_fix,1);  
 	[unique_dates,unique_date_indices] = unique(to_fix(:,1));
 	to_fix = to_fix(unique_date_indices,:);
-	disp(size(to_fix));
 	
-	% Check correct time redolution	
+	
+	% Check correct time redolution	between rows - should be a multiple of t_res
 	% this method of creating dates may be incorrect, eg the 'every 5s' 5, 10,15... pattern may be lost when converting over leap times.
 	% can speed up by vectorising
-	for t_count = [1:size(to_fix,1)-1]
-		if mod(abs(etime(datevec(to_fix(t_count,1)),datevec(to_fix(t_count+1,1)))),t_res) ~= 0 % is teh time difference between datapoints a multiple of our resolution?
-			error('Lost time resolution so bad data interpolation (no longer linear!!)');
-		end
-	end
+	check_time_resolution(datevec(to_fix),t_res);
+	
+	
 			
 end

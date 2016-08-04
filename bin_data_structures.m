@@ -1,5 +1,7 @@
 % Bin all the omni data fields, add info to data structures
 % Only useful if you want teh overall quantiles!!
+%
+% Used to be in main matlab-prep file. Now only called if required.
 
 function [] = bin_data_structures( data_dir, station, years, months, day_ranges, window_length )
 	
@@ -31,7 +33,7 @@ function [] = bin_data_structures( data_dir, station, years, months, day_ranges,
 		for month = months 
 			
             f_to_load = strcat(data_dir,sprintf('structured/%s_%d_%d_%d',station,win_mins,year,month));
-            f_to_save = strcat(data_dir, sprintf('ready/%s_%d_%d_%d',station,win_mins,year,month));
+            f_to_save = strcat(data_dir, sprintf('binned/%s_%d_%d_%d',station,win_mins,year,month));
 			
             if exist(strcat(f_to_load,'.mat')) ~= 2 
 				warning(sprintf('>>> Could not load file <<< %s',f_to_load));

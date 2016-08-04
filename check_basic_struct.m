@@ -52,6 +52,24 @@ function [] = check_basic_struct( checking, st_type )
 		else
 			error('Did you get an empty??');
 		end
+	elseif strcmp(st_type,'get_opts')
+		% check all fields specified and correct types. 
+		if ~isfield(checking,'station') | ~isfield(checking,'y') | ~isfield(checking,'m') | ~isfield(checking,'win_mins')
+			disp(checking);
+			error('Incorrect fields');
+		elseif ~isa(checking.station,'char') | isempty(checking.station) | length(checking.station) ~= 4
+			disp(checking.station);
+			error('Station is not good enough!');
+		elseif ~isa(checking.y,'double') | isempty(checking.y)
+			disp(checking.y);
+			error('Bad years');
+		elseif ~isa(checking.m,'double') | isempty(checking.m)
+			disp(checking.m);
+			error('Bad months');
+		elseif ~isa(checking.win_mins,'double') | isempty(checking.win_mins)
+			disp(checking.win_mins);
+			error('Bad number of minutes in window');
+		end
 	else 
 		error('>>Unknown struct type<<');
 	end

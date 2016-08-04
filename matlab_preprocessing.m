@@ -24,126 +24,253 @@
 
 function [] = matlab_preprocessing()
     
+	
     stations = {'GILL'};%,'PINA','FCHU','ISLL'};%{'GILL','FCHU','ISLL','PINA'};
-    years = [1990:2005];
-    months = [1:12];
+    years = 1990:2005;
+    months = 1:12;%[1:12];
     data_dir = '/net/glusterfs_phd/scenario/users/mm840338/data_tester/data/';%strcat(pwd,sprintf('/data/'));
-    window_length = 60*60; % in seconds, should be a multiple of minutes? then use 1min OMNI?
+    win_mins = 90; % in seconds, should be a multiple of minutes? then use 1min OMNI?
 	data_t_res = 5; %every 5 seconds using CANOPUS data, will need to change for CARISMA
 	
 	
-    do_omni = false;%true;
-  
-    do_prep = false;%true;
-    do_thresh = false;%true; interpolate_missing = true; save_removed = false; %saving the removed makes twice as long
-    do_hr_sort = false;%true;
-    do_hr_fix = false;%true; %should always run if re-sorting by hour 
-    do_omni_remove = false;%true; 
-	do_the_binning = true;
+	% set global variable for tracing
+	set_ptag(2);
+	ptag = get_ptag();
+	
+
+	
+    do_omni = true;
+    do_prep = true;
+    do_thresh = true; interpolate_missing = true; 
+    do_hr_sort = true;
+    do_hr_fix = true; %should always run if re-sorting by hour 
+	do_omni_hr_sort = true;
+    do_omni_remove = true;%true; 
 	do_calc_psds = true;
-	do_find_medians  =  false;
-	%do_get_offset_data = false; %functionality needs restoring now we have structures
     
 	 %threshold values
-    z_low = 5.8e4;
-    z_high = 6.4e4;
+	z_lim =[5.8e4,6.4e4];
 	
 	% MLT sectors
-	day_ranges = [ 3, 9 ; 9, 15; 15, 21 ;21,3];
+	%day_ranges = [ 3, 9 ; 9, 15; 15, 21 ;21,3];
     
 		
 	% checks
-	if window_length > 28*24*60*60
+	if win_mins > 28*24*60
 		error('Cant currently have windows larger than a month');
 	end
     
     for station_cell = stations
 		station = char(station_cell);
 		
-		if strcmp(station,'TEST')
-			do_omni = true;	
-			do_prep = false;
-			do_thresh = false; interpolate_missing = false; save_removed = false;%you may need to puyt in new threshold limits.
-			do_hr_sort = false;
-			do_hr_fix = false; %should always run if re-sorting by hour 
-			do_omni_remove = true;
-			
-			z_low = -1.1;
-			z_high = 1.1;
-		end
+		% make get_opts struct for this run
+		data_opts = [];
+		data_opts.station = station;
+		data_opts.y = years;
+		data_opts.m = months;
+		data_opts.win_mins = win_mins;
+		
+		check_basic_struct(data_opts,'get_opts');
    
-		tic
-		disp(sprintf('Doing the processing for %s with %d minute windows',station,window_length/60));
+		do_print(ptag,1,sprintf('matlab_preprocessing: Processing %s with %d minute windows\n',station,data_opts.win_mins));
 		
 		if do_omni
-			tic
-			read_in_omni_data( data_dir, station, years, window_length, data_t_res );
-			if interpolate_missing & mod(window_length,60^2) ~= 0 % fill in gaps if using 1min data
-				interpolate_omni( data_dir, station, years, [1:12], window_length );
+			
+			do_print(ptag,1,'matlab_preprocessing: Reading in omni data\n');
+			read_in_omni_data( data_dir, data_opts );
+			
+			
+			if interpolate_missing && mod(win_mins,60) ~= 0 % fill in gaps if using 1min data
+				
+				do_print(ptag,1,'matlab_preprocessing: interpolating OMNI data\n');
+				
+				for year = years
+					for month = months
+				
+						f_to_load = strcat(data_dir,sprintf('omni_1min/prepped/%s_omni_1min_%d_%d_%d',station,win_mins,year,month));
+						f_to_save = strcat(data_dir,sprintf('omni_1min/fixed/%s_omni_1min_%d_%d_%d',station,win_mins,year,month));
+						
+						if exist(strcat(f_to_load,'.mat'),'file')
+							load(f_to_load);
+							do_print(ptag,2,sprintf('matlab_preprocessing: Interpolating OMNI data for %d month %d \n',year,month));
+							
+							omni_data = interpolate_omni( omni_data, data_opts );
+							
+							if ~isempty(omni_data) && min(size(omni_data)) > 0
+								save(f_to_save,'omni_data');
+							else do_print(ptag,2,'matlab_preprocessing: Nothing to save!!\n'); 
+							end
+						else do_print(ptag,2,'matlab_preprocessing: Nothing to load in for OMNI interpolation\n');
+						end
+					end
+				end
 			end
-			toc
+			
 		end
 		
-		if do_prep 
-			tic
-			data_prep( data_dir, station, years, months );
-			toc
-		end
-		
-		if do_thresh
-			tic
-			do_thresholding( data_dir, station, years, months, z_low, z_high, interpolate_missing, save_removed, window_length,data_t_res,[] );
-			toc
-		end
-		
-		if do_hr_sort
-			tic
-			sort_by_hour( data_dir, station, years, months, window_length, data_t_res );
-			toc
+		% do stuff in blocks where possible to prevent unnecessary reading in and out. 
+		if do_prep || do_thresh || do_hr_sort 
+			for year = years
+				for month = months
+					
+					data = [];
+					if do_prep
+						f_to_load = strcat(data_dir,sprintf('/raw/%s_%d_%d',station,year,month));
+						f_to_save = strcat(data_dir,sprintf('/prepped/%s_%d_%d',station,year,month));
+						
+						do_print(ptag,1,sprintf('matlab_preprocessing: Doing data_prep on %s, year %d\n',station,year));
+						
+						if exist(strcat(f_to_load,'.mat'),'file')
+						
+							load(f_to_load);	
+							do_print(ptag,2,sprintf('matlab_preprocessing: data_prep for month %d\n',month));
+							
+							data = data_prep( data, data_dir, data_opts, year );
+							
+							if ~isempty(data) && min(size(data)) > 0
+								save(f_to_save,'data');
+							else do_print(ptag,2,'matlab_preprocessing: Nothing to save!!\n'); 
+							end
+						else do_print(ptag,2,sprintf('matlab_preprocessing: No file to load for data_prep, %s %d month %d\n',station,year,month));
+						end
+					end
+					
+					if do_thresh
+						
+						f_to_load = strcat(data_dir,sprintf('/prepped/%s_%d_%d',station,year,month));
+						f_to_save = strcat(data_dir,sprintf('/thresholded/%s_%d_%d_%d',station,win_mins,year,month));
+						
+						do_print(ptag,1,sprintf('matlab_preprocessing: Doing thresholding on %s, year %d\n',station,year));
+						
+						% now need to check correct data exists
+						if exist(strcat(f_to_load,'.mat'),'file')
+							
+							do_print(ptag,2,sprintf('matlab_preprocessing: thresholding for month %d\n',month));
+							if ~do_prep
+								load(f_to_load);	
+							end
+							
+							data = do_thresholding( data, data_opts, z_lim, interpolate_missing, data_t_res );
+													
+							if ~isempty(data) && min(size(data)) > 0
+								save(f_to_save,'data');
+							else do_print(ptag,2,'matlab_preprocessing: Nothing to save!!\n'); 
+							end
+						else do_print(ptag,2,sprintf('matlab_preprocessing: No file to load for thresholding, %s %d month %d\n',station,year,month));
+						end
+						
+					end
+					
+					if do_hr_sort
+					
+						f_to_load = strcat(data_dir,sprintf('/thresholded/%s_%d_%d_%d',station,win_mins,year,month));
+						f_to_save = strcat(data_dir,sprintf('/sorted1/%s_%d_%d_%d',station,win_mins,year,month));
+					
+						do_print(ptag,1,sprintf('matlab_preprocessing: Doing CANOPUS window sorting on %s, year %d\n',station,year));
+					
+						if exist(strcat(f_to_load,'.mat'),'file')
+							
+							do_print(ptag,2,sprintf('matlab_preprocessing: Sorting into windows, month %d\n',month));
+							if ~do_thresh
+								load(f_to_load);
+							end
+							
+							data = sort_by_hour( data, data_opts, data_t_res );
+			
+							if ~isempty(data) && min(size(data)) > 0
+								save(f_to_save,'data','-v7.3');
+							else do_print(ptag,2,'matlab_preprocessing: Nothing to save!!\n'); 
+							end
+						else do_print(ptag,2,sprintf('matlab_preprocessing: No file to load for thresholding, %s %d month %d\n',station,year,month));
+						end
+					end
+				end
+			end
 		end
 		
 		if do_hr_fix
-			tic
-			fix_moved_hours( data_dir, station, window_length, data_t_res );
-			toc
+		
+			do_print(ptag,1,sprintf('matlab_preprocessing: Fixing all moved hours'));
+			fix_moved_hours( data_dir, station, data_opts, data_t_res );
+		
 		end
 		
-		if do_omni & do_hr_sort% now get the relevant omni length windows
-			sort_omni_by_hour( data_dir, station, years, months, window_length, data_t_res, 0.95 )
+		if do_omni_hr_sort% now get the relevant omni length windows
+		
+			do_print(ptag,1,sprintf('matlab_preprocessing: Sorting omni hours\n'));
+			sort_omni_by_hour( data_dir, data_opts, data_t_res, 0.75 );
+			
 		end
 		
-		if do_omni_remove
-			tic
-			remove_bad_omni( data_dir, station, years, months, window_length );
-			toc
+		
+		if do_omni_remove || do_calc_psds
+		
+			if do_omni_remove && mod(win_mins,60) == 0
+				load(strcat(data_dir,sprintf('%s_omni_%d',station,win_mins)));
+			end
+			
+			
+			for year = years
+				for month = months
+				
+					if do_omni_remove				
+						f_to_load = strcat(data_dir,sprintf('sorted2/%s_%d_%d_%d',station,win_mins,year,month));
+						f_to_save = strcat(data_dir,sprintf('structured/%s_%d_%d_%d',station,win_mins,year,month));
+					
+						do_print(ptag,1,sprintf('matlab_preprocessing: Matching OMNI, CANOPUS windows for %s, year %d\n',station,year));
+					
+						if mod(win_mins,60) ~=0
+							fomni_to_load = strcat(data_dir,sprintf('omni_1min/sorted1/%s_omni_1min_%d_%d_%d',station,win_mins,year,month));
+						end
+						
+						if exist(strcat(f_to_load,'.mat'),'file')
+							load(f_to_load);
+							if mod(win_mins,60) == 0 || exist(strcat(fomni_to_load,'.mat'),'file')% we can do the function!
+								if mod(win_mins,60) ~= 0; load(fomni_to_load); end
+								do_print(ptag,2,sprintf('matlab_preprocessing: Structuring data and OMNI data for month %d \n',month));
+							
+								[data] = remove_bad_omni( data, omni_data );
+								
+								if ~isempty(data) && min(size(data)) > 0
+									save(f_to_save,'data');
+								else do_print(ptag,2,'matlab_preprocessing: Nothing to save!!\n'); 
+								end
+								
+							else do_print(ptag,2,'matlab_preprocessing: No omni data to use\n');
+							end
+						else do_print(ptag,2,sprintf('matlab_preprocessing: No file to load for matching to OMNI, %s %d month %d\n',station,year,month));
+						end
+					end
+					
+					if do_calc_psds
+						
+						f_to_load = strcat(data_dir,sprintf('structured/%s_%d_%d_%d',station,win_mins,year,month));
+						f_to_save = strcat(data_dir, sprintf('psds/%s_%d_%d_%d',station,win_mins,year,month));
+						
+						do_print(ptag,1,sprintf('matlab_preprocessing: Calculating PSD for %s, year %d\n',station,year));
+						
+						if exist(strcat(f_to_load,'.mat'),'file')
+						
+							do_print(ptag,2,sprintf('matlab_preprocessing: calculating psds for month %d\n',month));
+							
+							if ~do_omni_remove
+								load(f_to_load);
+							end
+							
+							[data] = get_save_psds( data, data_opts );
+							
+							if ~isempty(data) && min(size(data)) > 0
+								save(f_to_save,'data');
+							else do_print(ptag,2,'matlab_preprocessing: Nothing to save!!\n'); 
+							end
+						else do_print(ptag,2,sprintf('matlab_preprocessing: No file to load for calculating psds, %s %d month %d\n',station,year,month));
+						end
+					end
+				end
+			end
 		end
 		
-		if do_the_binning
-			tic
-			bin_data_structures(data_dir,station,years,months,day_ranges,window_length);
-			toc
-		end
-		
-		% if do_get_offset_data
-			% tic
-			% make_offset_data( data_dir,station,years,months );
-			% toc
-		% end
-
-		if do_calc_psds    
-			tic    
-			get_save_psds( data_dir, station, years, months, window_length );
-			toc
-		end
-		
-		% refresh the overall speed-binned medians
-		if do_find_medians
-			tic
-			refresh_meds();
-			toc
-		end
-		
-		toc
 	end
+
 
 end
