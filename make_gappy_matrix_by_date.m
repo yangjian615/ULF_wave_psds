@@ -2,7 +2,7 @@
 % Originally from do_thresholding code, expanded for omni data. We expect to fix the resultant matrix, hence the name of output variable.
 %
 % Requirements:
-% data: first column of data is dates. Any formatting of these should already be included (eg rounding to 5secs, or all in 0secs)
+% data: first column of data is datenums. Any formatting of these should already be included (eg rounding to 5secs, or all in 0secs)
 % t_res: must supply required resolution in seconds
 
 function [to_fix] = make_gappy_matrix_by_date( data, t_res )
@@ -38,7 +38,7 @@ function [to_fix] = make_gappy_matrix_by_date( data, t_res )
 	% Check correct time redolution	between rows - should be a multiple of t_res
 	% this method of creating dates may be incorrect, eg the 'every 5s' 5, 10,15... pattern may be lost when converting over leap times.
 	% can speed up by vectorising
-	check_time_resolution(datevec(to_fix),t_res);
+	check_time_resolution(datevec(to_fix(:,1)),t_res);
 	
 	
 			

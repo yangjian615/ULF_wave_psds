@@ -14,7 +14,7 @@
 function [output_data] = sort_by_hour( data, get_opts, data_t_res  )
     
 	ptag = get_ptag();
-	do_print(ptag,2,'sort_by_hor: entering function');
+	do_print(ptag,2,'sort_by_hour: entering function\n');
 	
 	window_length = get_opts.win_mins*60; % window length in seconds
 	window_data_num = window_length/data_t_res; % number of data points in each window

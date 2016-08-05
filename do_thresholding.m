@@ -17,12 +17,14 @@ function [output_data] = do_thresholding( data, get_opts, z_lim, interpolate_mis
 	win_mins = get_opts.win_mins;
 	mins_to_fix = 5; %how many minutes out of every hour to fix?
 
-    do_print(ptag,2,'do_thresholding: entering function');
+    do_print(ptag,2,'do_thresholding: entering function\n');
     
     
 	[data(:,8:10)] = remove_by_threshold(data(:,8:10),z_lim(1),z_lim(2));
 	empty_rows = sum(data(:,8:10),2) == 0;
-	data(empty_rows,:) = [];
+	do_print(ptag,3,sprintf('do_thresholding: removing %d empty rows\n',sum(empty_rows)));
+	data = data(~empty_rows,:);
+	
 	
 	% DUPLICATE DATA CHECK TOO EXPENSIVE? You could just remove it all if two different sets, that usually seems to be the case anyway
 	% check for duplicate data, remove if same date different xyz
@@ -38,20 +40,19 @@ function [output_data] = do_thresholding( data, get_opts, z_lim, interpolate_mis
 			if (sum( data(corresp,8:10) == extra_data(extra_entry) ) ~= 3) % two different sets of data, remove both
 				dels(corresp) = true;
 			else 
-				do_print(ptag,3,'do_thresholding: Some duplicate data. Removing.');
+				do_print(ptag,3,'do_thresholding: Some duplicate data. Removing.\n');
 				disp(extra_data);
 			end
 		end
 		if sum(dels) > 1
-			do_print(ptag,3,'do_thresholding: Two sets of data for same dates. Removing both sets of data.');
+			do_print(ptag,3,'do_thresholding: Two sets of data for same dates. Removing both sets of data.\n');
 			data = data(~dels,:);
 		end
 	end
 	[unique_dates,unique_date_indices] = unique(data(:,1)); % now getting rid of duplicate data. This will be done again if interpolating, unfortuately
 	data = data(unique_date_indices,:);
-	
-	
 
+	
 	% interpolate anything missing if there is data left
 	if interpolate_missing && min(size(data)) > 0
 		do_print(ptag,2,sprintf('do_thresholding: try interpolate up to %d minutes missing per hour, checking in chunks of window length\n',mins_to_fix));

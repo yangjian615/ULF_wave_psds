@@ -13,7 +13,7 @@
 function [output_data] = data_prep(data,data_dir,get_opts,this_year)
 
 	ptag = get_ptag();
-	do_print(ptag,2,'data_prep: entering function');
+	do_print(ptag,2,'data_prep: entering function\n');
     do_mlt_conversion = true; %THESE SHOULD BOTH BE TRUE ALMOST ALWAYS
     do_mag_rot = true;
 	

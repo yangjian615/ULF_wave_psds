@@ -15,6 +15,8 @@ function [] = check_time_resolution(to_check,time_res)
 	check_res = mod(abs(etime(check2,check1)),time_res);
 	
 	if sum(check_res) > 0
+		disp(sum(check_res ~= 0));
+		%disp(unique(check_res));
 		error('Bad time resolution between data points');
 	end
 	

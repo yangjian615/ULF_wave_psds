@@ -28,7 +28,7 @@ function [] = matlab_preprocessing()
     stations = {'GILL'};%,'PINA','FCHU','ISLL'};%{'GILL','FCHU','ISLL','PINA'};
     years = 1990:2005;
     months = 1:12;%[1:12];
-    data_dir = '/net/glusterfs_phd/scenario/users/mm840338/data_tester/data/';%strcat(pwd,sprintf('/data/'));
+    data_dir = '/glusterfs/scenario/users/mm840338/data_tester/data/';%'/net/glusterfs_phd/scenario/users/mm840338/data_tester/data/';%strcat(pwd,sprintf('/data/'));
     win_mins = 90; % in seconds, should be a multiple of minutes? then use 1min OMNI?
 	data_t_res = 5; %every 5 seconds using CANOPUS data, will need to change for CARISMA
 	
@@ -39,13 +39,13 @@ function [] = matlab_preprocessing()
 	
 
 	
-    do_omni = true;
-    do_prep = true;
-    do_thresh = true; interpolate_missing = true; 
-    do_hr_sort = true;
-    do_hr_fix = true; %should always run if re-sorting by hour 
+    do_omni = false;
+    do_prep = false;
+    do_thresh = false; interpolate_missing = true; 
+    do_hr_sort = false;
+    do_hr_fix = false; %should always run if re-sorting by hour 
 	do_omni_hr_sort = true;
-    do_omni_remove = true;%true; 
+    do_omni_remove = true; 
 	do_calc_psds = true;
     
 	 %threshold values
@@ -128,6 +128,7 @@ function [] = matlab_preprocessing()
 							data = data_prep( data, data_dir, data_opts, year );
 							
 							if ~isempty(data) && min(size(data)) > 0
+								do_print(ptag,4,'matlab_preprocessing: saving prepped data\n');
 								save(f_to_save,'data');
 							else do_print(ptag,2,'matlab_preprocessing: Nothing to save!!\n'); 
 							end
@@ -190,7 +191,7 @@ function [] = matlab_preprocessing()
 		
 		if do_hr_fix
 		
-			do_print(ptag,1,sprintf('matlab_preprocessing: Fixing all moved hours'));
+			do_print(ptag,1,sprintf('matlab_preprocessing: Fixing all moved hours\n'));
 			fix_moved_hours( data_dir, station, data_opts, data_t_res );
 		
 		end
@@ -198,7 +199,7 @@ function [] = matlab_preprocessing()
 		if do_omni_hr_sort% now get the relevant omni length windows
 		
 			do_print(ptag,1,sprintf('matlab_preprocessing: Sorting omni hours\n'));
-			sort_omni_by_hour( data_dir, data_opts, data_t_res, 0.75 );
+			sort_omni_by_hour( data_dir, data_opts, data_t_res, 0.5 );
 			
 		end
 		

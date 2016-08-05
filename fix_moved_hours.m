@@ -18,7 +18,6 @@ function [] = fix_moved_hours( data_dir, station, data_opts, data_t_res )
 
 	ptag = get_ptag();
 
-
     do_print(ptag,1,'fix_moved_hours: Glueing together hours split when converting to MLT \n');
     
 	win_mins = data_opts.win_mins;
