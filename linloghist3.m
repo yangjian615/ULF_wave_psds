@@ -22,12 +22,11 @@ function [n,xedges,yedges] = linloghist3( lindata, logdata, nbins )
 		
 	n = hist3([lindata,logdata],'Edges',{xedges yedges});% hold on;
 	
+	%warning: don't really understand what matlab is doing here. Suggest rewriting to use bin_2d_data instead
+	warning('linlinhist3:BadMATLABBinningUsed');
 	
 	% get rid of stupid extra empy bins that are confusing
 	n = n(1:nbins(1),1:nbins(2));
 
-	%n_flat = reshape(n,[],1);
-	%n1 = n';
-	%n1(size(n,2) + 1, size(n,1) + 1) = 0;
-	%[xb,yb] = meshgrid(xedges,yedges); % for plotting, if you want
+	
 end

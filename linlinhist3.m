@@ -6,6 +6,9 @@ function [n,xedges,yedges] = linlinhist3( lindata1, lindata2, nbins )
 	
 		xedges = linspace(min(lindata1),max(lindata1),nbins(1)+1);
 		yedges = linspace(min(lindata2),max(lindata2),nbins(2)+1);
+		
+		disp(xedges);
+		disp(yedges);
 			
 		linsize1 = size(lindata1);
 		linsize2 = size(lindata2);
@@ -18,13 +21,15 @@ function [n,xedges,yedges] = linlinhist3( lindata1, lindata2, nbins )
 		end
 			
 		n = hist3([lindata1,lindata2],'Edges',{xedges yedges});% hold on;
+		%warning: don't really understand what matlab is doing here. Suggest rewriting to use bin_2d_data instead
+		% Actaully I think matlab is adding in extra bins on both sides to include maximum and minimum
+		warning('linlinhist3:BadMATLABBinningUsed');
 		
 		
 		% get rid of stupid extra empy bins that are confusing
-		n = n(1:nbins(1),1:nbins(2));
-
-		%n_flat = reshape(n,[],1);
-		%n1 = n';
-		%[xb,yb] = meshgrid(xedges,yedges); % for plotting, if you want
-		%disp(max(xb));
+		n = n(1:nbins(1),1:nbins(2)); 
+		
+		
+		
+		
 end
