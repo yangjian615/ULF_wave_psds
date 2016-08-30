@@ -71,8 +71,8 @@ function [] = check_basic_struct( checking , st_type )
 			disp(checking.win_mins);
 			error('Bad number of minutes in window');
 		end
-		
-		% check optional fields one at a time
+	elseif strcmp(st_type,'gen_opts')
+		% you need to do the rest of them!
 		% what do I expect for time_sectors option??
 		if isfield(checking,'speed_sectors') & ~isempty(checking.speed_sectors)
 			if ~iscell(checking.speed_sectors)
