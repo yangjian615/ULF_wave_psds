@@ -18,6 +18,7 @@ function [out_struct] = make_basic_struct(st_name)
 		out_struct.pop_lim = [1e-5,1e11];%[0.7,1.5e5] for psd
 		out_struct.of_lim = [-inf,inf];%[250,780];
 		out_struct.time_sectors = []; %all data is option
+		out_struct.speed_sectors = []; %if you want to look at specific quantiles. Expect a cell: first value is no. of quantiles, the second is which of these you want
 	% multifreq_opts: single or multiple frequency options
 	elseif strcmp(st_name,'multifreq_opts')
 		out_struct.single_freq = [];

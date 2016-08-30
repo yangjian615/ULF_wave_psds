@@ -1,7 +1,8 @@
 % Any checks you want to do
 
-function [] = check_basic_struct( checking, st_type )
+function [] = check_basic_struct( checking , st_type )
 
+	%error('check_basic_struct:BadInputType','cell required for speed_sectors field');
 	disp('You should be testing this functionality');
 
 	err_str = sprintf('>>>%s struct is bad<<<',st_type);
@@ -53,7 +54,7 @@ function [] = check_basic_struct( checking, st_type )
 			error('Did you get an empty??');
 		end
 	elseif strcmp(st_type,'get_opts')
-		% check all fields specified and correct types. 
+		% check all required fields specified and correct types. 
 		if ~isfield(checking,'station') | ~isfield(checking,'y') | ~isfield(checking,'m') | ~isfield(checking,'win_mins')
 			disp(checking);
 			error('Incorrect fields');
@@ -70,6 +71,32 @@ function [] = check_basic_struct( checking, st_type )
 			disp(checking.win_mins);
 			error('Bad number of minutes in window');
 		end
+		
+		% check optional fields one at a time
+		% what do I expect for time_sectors option??
+		if isfield(checking,'speed_sectors') & ~isempty(checking.speed_sectors)
+			if ~iscell(checking.speed_sectors)
+				error('check_basic_struct:BadInputType','cell required for speed_sectors field');
+			elseif length(checking.speed_sectors) ~= 2
+				error('check_basic_struct:BadInputSize','bad number of elements in speed_sectors cell');
+			else
+				temp_field = checking.speed_sectors;
+				num_quants = cell2mat(temp_field(1));
+				which_quants = cell2mat(temp_field(2));
+				
+				if ~isa(num_quants,'double') | ~isa(which_quants,'double')
+					error('check_basic_struct:BadInputType','two double inputs needed');
+				elseif length(num_quants) ~= 1 | length(which_quants) > num_quants | max(which_quants) > num_quants 
+					error('check_basic_struct:BadInputSizeOrValue','first input should be number of quantiles, second which ones to use');
+				end
+				
+				clearvars('temp_field','num_quants','which_quants');
+				
+			end
+					
+		end
+			
+		
 	else 
 		error('>>Unknown struct type<<');
 	end
