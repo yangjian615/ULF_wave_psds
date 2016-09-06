@@ -15,6 +15,7 @@ function [n] = plot_time_coverage( d_times, win_mins )
 	d_month_end = datevec(d_months(end,:)); d_month_end(2) = d_month_end(2)+1; d_month_end = datenum(d_month_end);
 	month_bin_edges = vertcat(unique(d_months),d_month_end);
 	
+	%TIDY THIS  AND TESTING.
 	
 	m_bins = length(unique(d_months));
 

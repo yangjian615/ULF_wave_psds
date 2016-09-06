@@ -10,12 +10,14 @@
 %
 % Currently it expects dates on the x-axis
 %
+% An example call has xcol: datenums made from [y m d 0 0 0], ycol: vecotr of hours, zcol: sw speed
 
 function [] = plot_data_spread(xcol,ycol,zcol,title_words)
 
     figure();
-    [Y,X] = meshgrid( min(ycol):max(ycol) , min(xcol):max(xcol) );
-    Z = NaN(max(xcol)-min(xcol)+1,max(ycol)-min(ycol)+1);
+    [Y,X] = meshgrid( floor(min(ycol)):ceil(max(ycol)) , min(xcol):max(xcol) );
+    Z = NaN(max(xcol)-min(xcol)+1,ceil(max(ycol))-floor(min(ycol))+1);
+	
     %run through hrs, dys to put in real data
     for i =[1:length(ycol)]
         xval = xcol(i);
@@ -25,6 +27,8 @@ function [] = plot_data_spread(xcol,ycol,zcol,title_words)
         location = X == xval & Y == yval;
         Z(location) = zval;
     end
+
+	%disp(size(X)); disp(size(Y)); disp(size(Z));
     surf(X,Y,Z);
     view(2);
     shading flat;
