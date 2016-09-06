@@ -9,6 +9,8 @@ function [hr_psds,freqs] = calculate_multitaper_powerspectrum( data, t_res )
     %w = 0.5*(1-cos(2*pi*n/(N-1)));
     %W = sum(w.^2)/N;
 	
+	[b,a] = lowpass_butt_filt();
+	
 	%time1 = times(1);
 	%time2 = times(2);
 	
@@ -20,11 +22,14 @@ function [hr_psds,freqs] = calculate_multitaper_powerspectrum( data, t_res )
 	end
 	%xyz_means = find_overall_mean(data_dir,station,years,months);
 	
+
 	for slice = [1:data_size(3)]
 		for index = [1:data_size(2)]
 			data(:,index,slice) = data(:,index,slice) - mean(data(:,index,slice)); %use mean of that column
-			%data(:,index,slice) = data(:,index,slice)-xyz_means(index);
-			%data(:,index,slice) = data(:,index,slice) .* w';
+			data(:,index,slice) = filter(b,a,data(:,index,slice));
+			
+			% %data(:,index,slice) = data(:,index,slice)-xyz_means(index);
+			% %data(:,index,slice) = data(:,index,slice) .* w';
 		end
 	end
 	
