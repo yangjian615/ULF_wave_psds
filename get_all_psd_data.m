@@ -30,7 +30,7 @@ function [all_data] = get_all_psd_data(data_dir,get_opts);
 				warning(sprintf('>>> Could not load file <<< %s',f_to_load));
 			else
 				load(f_to_load);
-				do_print(ptag,2,sprintf('Loading PSD data for %s, year %d month %d, window length %d minutes',station, year, month, win_mins)); 
+				do_print(ptag,2,sprintf('Loading PSD data for %s, year %d month %d, window length %d minutes\n',station, year, month, win_mins)); 
 				%now have data and data_bins and freqs
 				all_data = [all_data,data];
 			
