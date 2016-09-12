@@ -36,15 +36,30 @@ end
 
 function testbin_2d_data3(testCase)
 %Test for checking of min values
+	
+	A = rand(500,2);
+	ed1 = [0,0.5,1];
+	ed2 = [0:0.1:1];
+	A(1,1) = -1;
+	n = bin_2d_data(A,ed1,ed2);
 
-	verifyTrue(testCase,false,'bin_2d_data:TestNotWritten');
+	verifyWarning(testCase,@()bin_2d_data(A,ed1,ed2),'bin_2d_data:UncontainedExtremeValue');
+	verifyWarning(testCase,@()bin_2d_data(A,ed1,ed2),'bin_2d_data:DoesntAddUp');
+	
 end
 
 
 function testbin_2d_data4(testCase)
 %Test for checking of max values
 
-	verifyTrue(testCase,false,'bin_2d_data:TestNotWritten');
+	A = rand(500,2);
+	ed1 = [0,0.5,1];
+	ed2 = [0:0.1:1];
+	A(1,1) = 2;
+	n = bin_2d_data(A,ed1,ed2);
+
+	verifyWarning(testCase,@()bin_2d_data(A,ed1,ed2),'bin_2d_data:UncontainedExtremeValue');
+	
 end
 
 
@@ -55,7 +70,8 @@ function testbin_2d_data5(testCase)
 	ed1 = [0,0.5,1];
 	ed2 = [0:0.1:1];
 	A(1,:) = [0 1];
-	n = bin_2d_data(A,ed1,ed2);
+	
+	n = bin_2d_data(A,ed1,ed2); % should get warning DoesntAddUp if d not workiong
 	
 	verifyEqual(testCase,sum(sum(n)),length(A));
 end
