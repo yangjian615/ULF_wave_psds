@@ -3,9 +3,13 @@
 function [] = check_basic_struct( checking , st_type )
 
 	%error('check_basic_struct:BadInputType','cell required for speed_sectors field');
-	disp('You should be testing this functionality');
+	%disp('You should be testing this functionality');
 
 	err_str = sprintf('>>>%s struct is bad<<<',st_type);
+	if ~isstruct(checking)
+		error('check_basic_struct:NotAStruct','didnt even give in a struct to check!');
+	end
+
 
 	if strcmp(st_type	,'multifreq_opts')
 		disp('Checking frequency options');
@@ -86,7 +90,7 @@ function [] = check_basic_struct( checking , st_type )
 				
 				if ~isa(num_quants,'double') | ~isa(which_quants,'double')
 					error('check_basic_struct:BadInputType','two double inputs needed');
-				elseif length(num_quants) ~= 1 | length(which_quants) > num_quants | max(which_quants) > num_quants 
+				elseif length(num_quants) ~= 1 | length(which_quants) > (num_quants+1) | max(which_quants) > (num_quants+1)
 					error('check_basic_struct:BadInputSizeOrValue','first input should be number of quantiles, second which ones to use');
 				end
 				
@@ -95,8 +99,54 @@ function [] = check_basic_struct( checking , st_type )
 			end
 					
 		end
-			
+	
+	elseif strcmp(st_type,'gen_opts_1')
+		% you need to do the rest of them!
+		% what do I expect for time_sectors option??
 		
+		if ~isfield(checking,'coord') | ~isfield(checking,'f_lim') | ~isfield(checking,'pop_lim')...
+				| ~isfield(checking,'time_sectors') | ~isfield(checking,'all_selections')
+			error('check_basic_struct:BadFields','unexpected fields found');
+		else
+		% check the quantile_selections field
+			check_basic_struct(checking.all_selections,'quantile_selections');
+		end
+		
+					
+	elseif strcmp(st_type,'quantile_selections')
+		% are you testing each of these checks?
+		if ~isstruct(checking) 
+			error('check_basic_struct:BadInputType','need struct for options');
+		end
+		if length(fieldnames(checking)) ~= 3
+			error('check_basic_struct:BadFields','unexpected number of fields');
+		end
+
+		% check we have expected fields
+		if ~isfield(checking,'o_f') | ~isfield(checking,'num_quants') | ~isfield(checking,'which_quants')
+			error('check_basic_struct:BadFields','unexpected fields found');
+		end
+
+		% now check contents
+		for c_count = 1:length(checking)
+			if isempty(checking(c_count).o_f) | isempty(checking(c_count).num_quants) | isempty(checking(c_count).which_quants)
+				error('check_basic_struct:EmptyFields','whey are you handing in empty fields??');
+			elseif ~isstr(checking(c_count).o_f)
+				error('check_basic_struct:BadInputType','bad opitions');
+			elseif ~isfloat(checking(c_count).num_quants) | length(checking(c_count).num_quants)~=1
+				error('check_basic_struct:BadInputType','bad opitions');
+			elseif ~isfloat(checking(c_count).which_quants) | max(checking(c_count).which_quants) > (checking(c_count).num_quants+1) | length(checking(c_count).which_quants) > (checking(c_count).num_quants+1)
+				error('check_basic_struct:BadInputType','bad opitions');
+			end
+		end
+
+		% and check no repeated fields
+		all_fields = {checking.o_f};
+		if length(unique(all_fields)) ~= length(checking)
+			error('check_basic_struct:BadInput','repeated data field conditions');
+		end	
+
+
 	else 
 		error('>>Unknown struct type<<');
 	end
