@@ -26,6 +26,7 @@ function [output_data] = get_save_psds( data, get_opts )
 		ps_coord = get_psds{ps_ind};
 		to_calc = cell2mat({data.(ps_coord)});
 		[pxx,freqs] = calculate_multitaper_powerspectrum(to_calc,t_res);
+		[pxx1] = calculate_powerspectrum(to_calc,t_res);
 			
 		if ps_ind == 1
 			mat_freqs = repmat(freqs,1,size(pxx,2));
@@ -35,6 +36,10 @@ function [output_data] = get_save_psds( data, get_opts )
 		
 		c_pxx = mat2cell(pxx,size(pxx,1),ones(1,size(pxx,2)));
 		[data(:).(sprintf('%sps',ps_coord))] = c_pxx{:};
+		
+		% if you want to compare periodogram results
+		%c_pxx1 = mat2cell(pxx1,size(pxx1,1),ones(1,size(pxx1,2)));
+		%[data(:).(sprintf('%sper',ps_coord))] = c_pxx1{:};
 		
 	end
 	
