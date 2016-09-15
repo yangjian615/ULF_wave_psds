@@ -1,6 +1,5 @@
 % This reads in OMNI data (from ASCII format) and puts it in a structure with
-% an entry for each data time point. We use low res omni if the length is a multiple of hours, 
-% high res otherwise.
+% an entry for each data time point. We use low res omni or high res as specified.
 
 
 % To do:
@@ -9,7 +8,7 @@
 % variability pars, eg sigma-v
 % what data is bad for new omni?
 
-function omni_data = read_in_omni_data( data_dir, data_opts )
+function omni_data = read_in_omni_data( data_dir, data_opts, res_opt )
 
 	ptag = get_ptag();
 	
@@ -18,6 +17,12 @@ function omni_data = read_in_omni_data( data_dir, data_opts )
 	station = data_opts.station;
 	years = data_opts.y;
 	win_mins = data_opts.win_mins;
+	
+	% check resolution option
+	if ~strcmp(res_opt,'high_res') & ~strcmp(res_opt,'low_res')
+		error('read_in_omni_data:BadInput',' msut specify high or low res OMNI data to use');
+	end
+	
 	
     do_mlt_conversion = true;%true; %SHOULD ALMOST ALWAYS BE TRUE
 	
@@ -46,7 +51,12 @@ function omni_data = read_in_omni_data( data_dir, data_opts )
     data_folder = data_dir;
 
 	
-	if mod(win_mins,60) == 0 % multiple of hours
+	if strcmp(res_opt,'low_res')
+		% check we CAN use low res - is it a multiple of hours?
+		if	mod(win_mins,60) ~= 0
+			error('read_in_omni_data:BadInput','requested hourly data but non-hourly window length');
+		end
+		
 		do_print(ptag,2,'read_in_omni_data: Using low res OMNI data\n');
 		f_to_open = strcat(data_folder,'omni2_all_years.dat'); 
 		if strcmp(station,'TEST')
@@ -97,6 +107,7 @@ function omni_data = read_in_omni_data( data_dir, data_opts )
 		warning('Removed -sign from last two outputs vxBz and vx, not sure whether I should or not');
 		output(:,15) = temp_data(:,16); % 'By' By (GSM) ~nT
 		output(:,16) = temp_data(:,13); % 'Bx' GSE or GSM ~nT
+		output(:,17) = temp_data(:,18); % sigma-|B| (GSE but it doesnt matter)
 		
 		mlts = read_in_mlt_midnight( data_dir, station );
 		
@@ -137,10 +148,10 @@ function omni_data = read_in_omni_data( data_dir, data_opts )
 			'Bz',num2cell(output(:,6)),'Ma',num2cell(output(:,7)),'Mm',num2cell(output(:,8)),...
 			'phi',num2cell(output(:,9)),'theta',num2cell(output(:,10)),'Kp',num2cell(output(:,11)),...
 			'E_field',num2cell(output(:,12)),'vxBz', num2cell(output(:,13)),'vx',num2cell(output(:,14)),...
-			'By',num2cell(output(:,15)),'Bx',num2cell(output(:,16)));
+			'By',num2cell(output(:,15)),'Bx',num2cell(output(:,16)),'sigma_absB',num2cell(output(:,17)));
 		save( f_to_save, 'omni_data' ) ;
 		
-	else 
+	elseif strcmp(res_opt,'high_res') 
 		data_folder = strcat(data_dir,'omni_1min/');
 		for year = years
 			for month = 1:12

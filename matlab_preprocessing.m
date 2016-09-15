@@ -22,30 +22,30 @@
 % pp_step6 = Removing any hours where the OMNI data is missing.
 
 
-function [] = matlab_preprocessing()
+function [] = matlab_preprocessing(win_mins)
     
 	
     stations = {'GILL'};%,'PINA','FCHU','ISLL'};%{'GILL','FCHU','ISLL','PINA'};
     years = 1990:2005;
     months = 1:12;%[1:12];
-    data_dir = '/glusterfs/scenario/users/mm840338/data_tester/data/';%'/net/glusterfs_phd/scenario/users/mm840338/data_tester/data/';%strcat(pwd,sprintf('/data/'));
-    win_mins = 90; % in seconds, should be a multiple of minutes? then use 1min OMNI?
+    data_dir = strcat(pwd,'/data/');%'/glusterfs/scenario/users/mm840338/data_tester/data/';%'/net/glusterfs_phd/scenario/users/mm840338/data_tester/data/';%strcat(pwd,sprintf('/data/'));
+    %win_mins = 90; % in minutes
 	data_t_res = 5; %every 5 seconds using CANOPUS data, will need to change for CARISMA
 	
-	
+
 	% set global variable for tracing
 	set_ptag(2);
 	ptag = get_ptag();
-	
 
 	
-    do_omni = false;
-    do_prep = false;
-    do_thresh = false; interpolate_missing = true; 
-    do_hr_sort = false;
-    do_hr_fix = false; %should always run if re-sorting by hour 
-	do_omni_hr_sort = true;
-    do_omni_remove = true; 
+    do_omni = false; res_opts = 'low_res';  %true;
+    do_prep = false;%true;
+    do_thresh = false;%true; 
+	interpolate_missing = false;%true; %for omni data AND CANOPUS
+    do_hr_sort = false;%true;
+    do_hr_fix =false;% true; %should always run if re-sorting by hour 
+	do_omni_hr_sort =false;%true;
+    do_omni_remove = false;%rue;%
 	do_calc_psds = true;
     
 	 %threshold values
@@ -77,8 +77,13 @@ function [] = matlab_preprocessing()
 		if do_omni
 			
 			do_print(ptag,1,'matlab_preprocessing: Reading in omni data\n');
-			read_in_omni_data( data_dir, data_opts );
+			read_in_omni_data( data_dir, data_opts, res_opts );
 			
+			% get variation of parameters
+			% these are calculated separ
+			%if strcmp(res_opts,'high_res')
+			
+			%end
 			
 			if interpolate_missing && mod(win_mins,60) ~= 0 % fill in gaps if using 1min data
 				
