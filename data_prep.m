@@ -36,10 +36,14 @@ function [output_data] = data_prep(data,data_dir,get_opts,this_year)
         
     end
   
+	station = get_opts.station;
 
-    decs = dlmread(strcat(data_dir,sprintf('%s_decs.txt',get_opts.station)));
-    mlts = read_in_mlt_midnight(data_dir,get_opts.station);
-    
+	
+	% load in details of station
+	load(strcat(data_dir,sprintf('%s_data_struct',station))); % get station_data
+    decs(:,1) = cell2mat({station_data.year}); decs(:,2) = cell2mat({station_data.decs});
+    mlts = cell2mat({station_data.MLT});
+	
 
 	% remove empty rows. Remember we made the matrix from zeroes in Python
 	empty_rows = sum(data,2) == 0;
