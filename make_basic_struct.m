@@ -44,6 +44,18 @@ function [out_struct] = make_basic_struct(st_name)
 		out_struct.o_f = [];
 		out_struct.num_quants = [];
 		out_struct.which_quants = [];
+	elseif strcmp(st_name,'add_omni_extras')
+	% field names should match up with funcitons add_X_field
+		out_struct.L = false;
+		out_struct.MLT_val = false;
+		out_struct.MLT_sector = false;
+		out_struct.abs_B = false;
+		out_struct.abs_Bz = false;
+		out_struct.sigma_v_perc = false;
+		out_struct.sigma_Np_perc = false;
+		out_struct.sigma_pressure_perc = false;
+		out_struct.abs_Bx = false;
+		out_struct.abs_By = false;
 	end
 	
 end

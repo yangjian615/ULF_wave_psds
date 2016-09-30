@@ -40,9 +40,10 @@ function [output_data] = data_prep(data,data_dir,get_opts,this_year)
 
 	
 	% load in details of station
+	station_data =[];
 	load(strcat(data_dir,sprintf('%s_data_struct',station))); % get station_data
-    decs(:,1) = cell2mat({station_data.year}); decs(:,2) = cell2mat({station_data.decs});
-    mlts = cell2mat({station_data.MLT});
+    decs(:,1) = cell2mat({station_data.year}); decs(:,2) = cell2mat({station_data.decs}); %lazy here to stick with older formatting
+    mlts(:,1) = cell2mat({station_data.year}); mlts(:,2) = cell2mat({station_data.MLT});
 	
 
 	% remove empty rows. Remember we made the matrix from zeroes in Python

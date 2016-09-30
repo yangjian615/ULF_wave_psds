@@ -3,16 +3,21 @@
 % Originally used in get_psd_medians
 
 
-function [all_data] = get_all_psd_data(data_dir,get_opts);
+function [all_data] = get_all_psd_data(data_dir,get_opts,add_extras);
 
 	ptag = get_ptag();
 
-	if isempty(get_opts)
-		get_opts = make_basic_struct('get_opts');
-		%get_opts.station = 'GILL';
-		%get_opts.y = [1990:2004];
-		%get_opts.m = [1:12];
+	% Defaults by number of inputs
+	switch nargin
+		case 1
+			get_opts = make_basic_struct('get_opts');
+			add_extras = make_basic_struct('add_omni_extras');
+		case 2 
+			add_extras = make_basic_struct('add_omni_extras');
 	end
+	%if isempty(get_opts)
+	%	get_opts = make_basic_struct('get_opts');
+	%end
 	
 	station = get_opts.station;
 	years = get_opts.y;
@@ -37,4 +42,8 @@ function [all_data] = get_all_psd_data(data_dir,get_opts);
 			end
 		end
 	end
+	
+	% add in extra stuff
+	all_data = add_requested_fields( all_data, add_extras, data_dir, get_opts );
+	
 end

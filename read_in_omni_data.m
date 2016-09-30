@@ -98,6 +98,7 @@ function omni_data = read_in_omni_data( data_dir, data_opts )
 		output(:,15) = temp_data(:,16); % 'By' By (GSM) ~nT
 		output(:,16) = temp_data(:,13); % 'Bx' GSE or GSM ~nT
 		output(:,17) = temp_data(:,18); % sigma-|B| (GSE but it doesnt matter)
+		output(:,18) = temp_data(:,23); % 'T_p' proton temperature 
 		
 		
 		% sort out bad data
@@ -118,11 +119,20 @@ function omni_data = read_in_omni_data( data_dir, data_opts )
 		dates(bad_data,:) = [];
 		output(bad_data,:) = [];
 		
-		orig_dates = dates;
+		orig_dates = datenum(dates);
 		
 		% Deal with annually changing station details
-		load(strcat(data_dir,sprintf('%s_data_struct',station))); % get station_data
-		%( add in L value, MLT etc to final if required )
+		f_station_data = strcat(data_dir,sprintf('%s_data_struct',station));
+		station_data = [];
+		if exist(strcat(f_station_data,'.mat'),'file')
+			load(f_station_data); % get station_data
+			if isempty(station_data)
+				error('read_in_omni_data:NoInput',' no station data read in');
+			end
+		else
+			error('read_in_omni_data:NoInput',' no station data to read in');
+		end
+		%( add in L value, MLT etc to final if required from station data ), not here
 		
 		% do conversion and sort out datenums for output
 		for year = years
@@ -137,13 +147,15 @@ function omni_data = read_in_omni_data( data_dir, data_opts )
 		output(:,1) = datenum( dates );
 		
 		%output(:,3) = convert_Kp( output(:,3) );
+
 		
 		omni_data = struct('dates',num2cell(output(:,1)),'speed',num2cell(output(:,2)),...
 			'pressure',num2cell(output(:,3)),'Np',num2cell(output(:,4)),'sigma_v',num2cell(output(:,5)),...
 			'Bz',num2cell(output(:,6)),'Ma',num2cell(output(:,7)),'Mm',num2cell(output(:,8)),...
 			'phi',num2cell(output(:,9)),'theta',num2cell(output(:,10)),'Kp',num2cell(output(:,11)),...
 			'E_field',num2cell(output(:,12)),'vxBz', num2cell(output(:,13)),'vx',num2cell(output(:,14)),...
-			'By',num2cell(output(:,15)),'Bx',num2cell(output(:,16)),'sigma_absB',num2cell(output(:,17)),'orig_dates',num2cell(orig_dates));
+			'By',num2cell(output(:,15)),'Bx',num2cell(output(:,16)),'sigma_absB',num2cell(output(:,17)),...
+			'orig_dates',num2cell(orig_dates),'T_p',num2cell(output(:,18)));
 		save( f_to_save, 'omni_data' ) ;
 	end	
 
@@ -155,7 +167,8 @@ function omni_data = read_in_omni_data( data_dir, data_opts )
 	
 	for year = years
 		for month = 1:12
-			
+	
+			orig_dates = []; %set back to empty
 			do_print(ptag,2,sprintf('read_in_omni_data: year %d, month %d \n',year,month));
 		
 			f_to_open = strcat(data_folder,sprintf('omni_min%d%02d.asc',year,month)); 
@@ -171,11 +184,10 @@ function omni_data = read_in_omni_data( data_dir, data_opts )
 			min = temp_data(:,4);
 			dates = [y ones(size(y)) d h min zeros(size(y)) ]; 
 			
-			orig_dates = dates;
 			
 			% recalculate
 			dates = datevec(datenum(dates));
-				
+			orig_dates = datenum(dates);
 	
 			
 			% fill i the data part (and sort out bad data)
@@ -199,6 +211,7 @@ function omni_data = read_in_omni_data( data_dir, data_opts )
 			output(:,17) = temp_data(:,14); bad_data = bad_data | abs(output(:,16)) >= 9999;% 'B' field magnitude avg, ~nT
 			output(:,18) = temp_data(:,7); bad_data = bad_data | output(:,18) >= 99;% 'pts_in_IMF_avg'
 			output(:,19) = temp_data(:,8); bad_data = bad_data | output(:,19) >= 99;% 'pts_in_plasma_avg'
+			output(:,20) = temp_data(:,27); % 'T' temperature, ~K
 			
 			% Notes on OMNI 1-min
 			% http://omniweb.gsfc.nasa.gov/html/HROdocum.html
@@ -217,10 +230,11 @@ function omni_data = read_in_omni_data( data_dir, data_opts )
 			
 			
 			%mlts = read_in_mlt_midnight( data_dir, station );
-			
+			do_print(ptag,3,sprintf('read_in_omni_data: removing %d data points as bad out of %d  \n',sum(bad_data),length(output)));
 			
 			dates(bad_data,:) = [];
 			output(bad_data,:) = [];
+			orig_dates(bad_data) = [];
 			
 			% Deal with annually changing station details
 			%( add in L value, MLT etc to final if required. Not here )
@@ -247,8 +261,8 @@ function omni_data = read_in_omni_data( data_dir, data_opts )
 				'E_field',num2cell(output(:,8)),'vx_gse', num2cell(output(:,9)),'vy_gse',num2cell(output(:,10)),...
 				'vz_gse',num2cell(output(:,11)),'xBSN',num2cell(output(:,12)),'yBSN',num2cell(output(:,13)),...
 				'zBSN',num2cell(output(:,14)),'By',num2cell(output(:,15)),'Bx',num2cell(output(:,16)),'B',...
-				num2cell(output(:,17)),'pts_in_IMF_avg',num2cell(output(:,18)),'pts_in_plasma_avg',num2cell(output(:,19))...
-				'orig_dates',num2cell(orig_dates));
+				num2cell(output(:,17)),'pts_in_IMF_avg',num2cell(output(:,18)),'pts_in_plasma_avg',num2cell(output(:,19)),...
+				'orig_dates',num2cell(orig_dates),'T',num2cell(output(:,20)));
 			save( f_to_save, 'omni_data' ) ;
 		
 		end

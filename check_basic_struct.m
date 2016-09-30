@@ -2,10 +2,7 @@
 
 function [] = check_basic_struct( checking , st_type )
 
-	%error('check_basic_struct:BadInputType','cell required for speed_sectors field');
-	%disp('You should be testing this functionality');
 
-	err_str = sprintf('>>>%s struct is bad<<<',st_type);
 	if ~isstruct(checking)
 		error('check_basic_struct:NotAStruct','didnt even give in a struct to check!');
 	end
@@ -145,7 +142,25 @@ function [] = check_basic_struct( checking , st_type )
 		if length(unique(all_fields)) ~= length(checking)
 			error('check_basic_struct:BadInput','repeated data field conditions');
 		end	
-
+		
+	elseif strcmp(st_type,'add_omni_extras')
+	% check each field is logical and corresponds to a funciton
+		fnames = fieldnames(checking);
+		
+		if length(checking) > 1
+			error('check_basic_struct:BadInputSIze',' expect struct of length 1 an dmany fields');
+		end
+		
+		for f_count = 1:length(fnames)
+			fn = fnames{f_count};
+			
+			if ~islogical(checking(1).(fn))
+				error('check_basic_struct:BadInputType',' expect a logical here');
+			elseif exist(sprintf('add_%s_field',fn)) ~= 2
+				error('check_basic_struct:NoCorrespondingFunction',' you need a function to actually add the field %s ',fn);
+			end
+		end
+	
 
 	else 
 		error('>>Unknown struct type<<');

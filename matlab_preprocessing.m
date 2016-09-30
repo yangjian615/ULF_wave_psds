@@ -25,7 +25,7 @@
 function [] = matlab_preprocessing(win_mins)
     
 	
-    stations = {'GILL'};%,'PINA','FCHU','ISLL'};%{'GILL','FCHU','ISLL','PINA'};
+    stations = {'GILL','PINA','FCHU','ISLL'};%{'GILL','FCHU','ISLL','PINA'};
     years = 1990:2005;
     months = 1:12;%[1:12];
     data_dir = strcat(pwd,'/data/');%'/glusterfs/scenario/users/mm840338/data_tester/data/';%'/net/glusterfs_phd/scenario/users/mm840338/data_tester/data/';%strcat(pwd,sprintf('/data/'));
@@ -34,18 +34,18 @@ function [] = matlab_preprocessing(win_mins)
 	
 
 	% set global variable for tracing
-	set_ptag(2);
+	%set_ptag(2);
 	ptag = get_ptag();
 
 	
-    do_omni = false; res_opts = 'low_res';  %true;
-    do_prep = false;%true;
-    do_thresh = false;%true; 
-	interpolate_missing = false;%true; %for omni data AND CANOPUS
-    do_hr_sort = false;%true;
-    do_hr_fix =false;% true; %should always run if re-sorting by hour 
-	do_omni_hr_sort =false;%true;
-    do_omni_remove = false;%rue;%
+    do_omni = true;
+    do_prep = true;
+    do_thresh = true; 
+	interpolate_missing = true; %for omni data AND CANOPUS
+    do_hr_sort = true;
+    do_hr_fix = true; %should always run if re-sorting by hour 
+	do_omni_hr_sort = true;
+    do_omni_remove = true;%
 	do_calc_psds = true;
     
 	 %threshold values
@@ -54,6 +54,15 @@ function [] = matlab_preprocessing(win_mins)
 	% MLT sectors
 	%day_ranges = [ 3, 9 ; 9, 15; 15, 21 ;21,3];
     
+	% want OMNI varas of from high res
+	pars_to_get_vars = {'speed','pressure','Bz','Np','T','xBSN','yBSN','zBSN'};
+	
+	% want into low res from high
+	pars_to_get = {'xBSN','yBSN','zBSN','T'}; % do I just want anything not in low res?
+		
+	% ratio of omni values required for average
+	perc_ok = 0.5;
+		
 		
 	% checks
 	if win_mins > 28*24*60
@@ -77,15 +86,10 @@ function [] = matlab_preprocessing(win_mins)
 		if do_omni
 			
 			do_print(ptag,1,'matlab_preprocessing: Reading in omni data\n');
-			read_in_omni_data( data_dir, data_opts, res_opts );
+			read_in_omni_data( data_dir, data_opts );
 			
-			% get variation of parameters
-			% these are calculated separ
-			%if strcmp(res_opts,'high_res')
 			
-			%end
-			
-			if interpolate_missing && mod(win_mins,60) ~= 0 % fill in gaps if using 1min data
+			if interpolate_missing %&& mod(win_mins,60) ~= 0 % fill in gaps if using 1min data
 				
 				do_print(ptag,1,'matlab_preprocessing: interpolating OMNI data\n');
 				
@@ -97,6 +101,7 @@ function [] = matlab_preprocessing(win_mins)
 						
 						if exist(strcat(f_to_load,'.mat'),'file')
 							load(f_to_load);
+							
 							do_print(ptag,2,sprintf('matlab_preprocessing: Interpolating OMNI data for %d month %d \n',year,month));
 							
 							omni_data = interpolate_omni( omni_data, data_opts );
@@ -203,16 +208,22 @@ function [] = matlab_preprocessing(win_mins)
 		
 		if do_omni_hr_sort% now get the relevant omni length windows
 		
-			do_print(ptag,1,sprintf('matlab_preprocessing: Sorting omni hours\n'));
-			sort_omni_by_hour( data_dir, data_opts, data_t_res, 0.5 );
-			
+			% sort by hour if only using high res
+			if mod(win_mins,60) ~= 0 
+				do_print(ptag,1,sprintf('matlab_preprocessing: Sorting omni hours\n'));
+				sort_omni_by_hour( data_dir, data_opts, perc_ok );
+			% otherwise add necessaries from high res
+			else
+				omni_add_vars( data_dir, data_opts, perc_ok, pars_to_get, pars_to_get_vars ); % saves the omni as filled_in
+			end
+				
 		end
 		
 		
 		if do_omni_remove || do_calc_psds
 		
 			if do_omni_remove && mod(win_mins,60) == 0
-				load(strcat(data_dir,sprintf('%s_omni_%d',station,win_mins)));
+				load(strcat(data_dir,sprintf('/omni_low_res/filled_in/%s_omni_%d',station,win_mins)));
 			end
 			
 			

@@ -6,7 +6,7 @@
 % 
 % perc_ok : what percentage/ratio of the window needs to be there before we take mean? Value should be from 0-1. Default is 100%
 
-function [] = sort_omni_by_hour(data_dir,data_opts,data_t_res,perc_ok)
+function [] = sort_omni_by_hour(data_dir,data_opts,perc_ok)
 
 	ptag = get_ptag();
 	
@@ -97,8 +97,15 @@ function [] = sort_omni_by_hour(data_dir,data_opts,data_t_res,perc_ok)
 									omni_out(omni_index).dates = win_begin;
 								else
 									o_field = char(omni_fields(o_count));
-									avg_odata = mean( cell2mat({omni_data(in_win).(o_field)}) );
+									o_data = cell2mat({omni_data(in_win).(o_field)});
+									avg_odata = mean( odata );
 									omni_out(omni_index).(o_field) = avg_odata;
+									
+									% add variance if we want it
+									if any(strcmp(pars_to_get_vars,o_field))
+										omni_out(omni_index).(strcat('sigma_',o_field)) = var(o_data);
+									end	
+									
 								end
 							end
 							
