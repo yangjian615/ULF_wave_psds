@@ -10,7 +10,7 @@ function [output] = add_sigma_absB_perc_field( data )
 	end
 	
 	all_B = cell2mat({data.absB});
-	all_sB = cell2mat({data.sigma_B});
+	all_sB = cell2mat({data.sigma_B}); %sigma_absB is the low-res omni one but there are big gaps. sigma_B is calculated from highres B values
 	
 	
 	warning('add_sigma_absB_perc_field: which sigma B definition to use???');

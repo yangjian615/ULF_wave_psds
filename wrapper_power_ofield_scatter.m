@@ -5,6 +5,9 @@
 %
 % Also deals with MLT separations
 % This expects you to want to plot aganist something that is NOT frequency - you need a different way to put this on xaxis.
+%
+% This is the wrapper you should use for functions that look at a single field and performa analysis on this, ie the x-axis 
+% will be one of the OMNI fields. Use a different function wrapper if you want to plot anythin against frequency.
 
 function [output_struct] = wrapper_power_ofield_scatter( data, gen_opts, freq_opts, nbins, extras, fn_to_do )
 
@@ -80,6 +83,8 @@ function [output_struct] = wrapper_power_ofield_scatter( data, gen_opts, freq_op
 	else
 		MLT_count = 1;
 	end
+	
+	
 	
 	% arrange speed sector stuff. For now just hijack MLT stuff
 	if ~isempty(gen_opts.speed_sectors)

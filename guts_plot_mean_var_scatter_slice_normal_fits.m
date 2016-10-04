@@ -75,7 +75,7 @@ function [output] = guts_plot_mean_var_scatter_slice_normal_fits( fn_st )
 				plot(exp(ycentres),n_norm(test_count,:)); hold on; set(gca,'xscale','log');
 
 				
-				disp(trapz(n_norm(test_count,:))); % for checking total prob
+				%disp(trapz(n_norm(test_count,:))); % for checking total prob
 				
 				pdf_ys = fit_pdfs(test_count).pdf_scaled;
 				%plot(yedges,pdf_ys,'k-.'); hold on;
