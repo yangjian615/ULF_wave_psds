@@ -55,7 +55,7 @@ function [] = matlab_preprocessing(win_mins)
 	%day_ranges = [ 3, 9 ; 9, 15; 15, 21 ;21,3];
     
 	% want OMNI varas of from high res
-	pars_to_get_vars = {'speed','pressure','Bz','Np','T','xBSN','yBSN','zBSN'};
+	pars_to_get_vars = {'speed','pressure','Bz','Np','T','xBSN','yBSN','zBSN','B'};
 	
 	% want into low res from high
 	pars_to_get = {'xBSN','yBSN','zBSN','T'}; % do I just want anything not in low res?
