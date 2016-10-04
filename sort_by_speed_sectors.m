@@ -6,8 +6,11 @@ function [speed_quants,which_quant] = sort_by_speed_sectors(data,num_quants)
 	ptag = get_ptag();
 	do_print(ptag,2,'sort_by_speed_sectors: entering function\n');
 
+	
 	if length(size(data)) ~=2
 		error('sort_by_speed_sectors:BadInputSize');
+	elseif sum(size(data)) == 0
+		error('sort_by_speed_sectors:BadInput',' no data sent in');
 	end
 
 	% find quantiles

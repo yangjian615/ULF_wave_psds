@@ -14,6 +14,9 @@ function [res,min_in_med] = plot_2par_median_PSD( data, par1, par2, numq1,numq2,
 	% first get the frequency
 	freqs = data(1).freqs*1e3;
 	
+	if isempty(whichfreq)
+		error('plot_2par_median_PSD:NoInput','need a frequency to plot at');
+	end
 	
 	f_tol = 0.0001; % frequency tolerance
 	do_print(ptag,2,sprintf('plot_2par_median_PSD: freq tol is %d \n',f_tol));
@@ -46,7 +49,12 @@ function [res,min_in_med] = plot_2par_median_PSD( data, par1, par2, numq1,numq2,
 	[quants1,which_q1] = sort_by_speed_sectors(cell2mat({data.(par1)}),numq1);
 	[quants2,which_q2] = sort_by_speed_sectors(cell2mat({data.(par2)}),numq2);
 	
-
+	% check you have good quantiles
+	if length(unique(quants1)) ~= length(quants1) | length(unique(quants2)) ~= length(quants2) 
+		error('plot_2par_median_PSD:BadQuantilesFound',' non-unique quantiles, may be due to structure of data, esp if OMNI');
+	end
+	
+	
 	% keep track of minimum used to calculate median [q1,q2,num_in_med]
 	min_in_med = [1,1,length(data)];
 	
@@ -105,10 +113,11 @@ function [res,min_in_med] = plot_2par_median_PSD( data, par1, par2, numq1,numq2,
 		end
 		do_print(ptag,3,sprintf('plot_2par_median_PSD:done first par iteration %d \n',q1));
 	end
+
 	
 	% check output
 	if sum(sum(isnan(res))) > 0  | sum(isnan(bin_centres1)) > 0 | sum(isnan(bin_centres2)) > 0
-		error('plot_2par_median_PSD:BadResult','got nans still1');
+		error('plot_2par_median_PSD:BadResult','got nans still');
 	end
 	
 	
@@ -136,7 +145,7 @@ function [res,min_in_med] = plot_2par_median_PSD( data, par1, par2, numq1,numq2,
 		if f_count ==1 
 			h = pcolor(xb,yb,log(res));
 			shading flat
-			%shading interp; grid on;
+			%shading interp;% grid on;
 			hold on;
 			%grid on; set(gca,'layer','top');
 			if isempty(num_conts)
@@ -148,12 +157,16 @@ function [res,min_in_med] = plot_2par_median_PSD( data, par1, par2, numq1,numq2,
 			tc = colorbar;
 			logscale_colorbar(tc);
 			title(tc,'Median PSD');
+			
+			% overlay speed contours.
+			%caxis([min(min(log(res))),max(max(log(res)))]);
+			%contour(x_axis,y_axis,extras,'k-.');
 				
 		elseif f_count ==2
 			h2 = pcolor(xb,yb,extras);
 			shading interp;%flat; 
 			hold on;
-			contour(x_axis,y_axis,extras,'kx');
+			contour(x_axis,y_axis,extras,'k');
 			tc2 = colorbar;
 			%logscale_colorbar(tc2);
 			title(tc2,'speed');
@@ -207,7 +220,7 @@ function [res,min_in_med] = plot_2par_median_PSD( data, par1, par2, numq1,numq2,
 			title(sprintf('corresponding speed median of %s,%s',par1,par2));
 		end
 		
-		figdirdate = '16-09-30';
+		figdirdate = '16-10-03';
 		if isempty(extra)
 			figtitle = sprintf('plots/%s_2par_plots/%s_%s_%d',figdirdate,par1,par2,f_count);
 		else
