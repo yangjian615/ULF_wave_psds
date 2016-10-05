@@ -3,6 +3,7 @@
 
 function []  = plot_power_diff( data, t_res )
 	
+	do_rescaled = true;%false;
 	coord = 'x';
 	
 	ptag = get_ptag();
@@ -10,16 +11,20 @@ function []  = plot_power_diff( data, t_res )
 	all_x = cell2mat({data.(coord)});
 	mean_x = mean(all_x,1);
 	
+	N = size(all_x,1); 
+	time_axis = [1:N]*t_res;
+	T = t_res*N; % total time
+	
 	all_mm_x = all_x;
 	for c_count = 1:length(data)
 		all_mm_x(:,c_count) = all_mm_x(:,c_count) - mean_x(c_count);
 	end
-	time_power_mm = sum( (all_mm_x).^2 )*t_res;
-	% try trapz version of this?
+	time_power_mm = trapz(time_axis,all_mm_x.^2)/T; % average power per unit time
 	
-	% Because of Matlab's funny  scaling we just add and dont multiply by f_res
+	% spectral domain: get area under curve
 	all_xps = cell2mat({data.(sprintf('%sps',coord))});
-	spectral_power = sum( all_xps );
+	spectral_power = trapz(data(1).freqs,all_xps);
+
 	
 	% check size
 	if size(time_power_mm,1) ~= 1 | size(time_power_mm,2) ~= length(data)
@@ -30,7 +35,7 @@ function []  = plot_power_diff( data, t_res )
 	
 	
 	% Plot intensity map of the energy in each domain
-	xedges = logspace(2,10,200);
+	xedges = logspace(-1,6,200);
 	yedges = xedges;
 	
 	n = bin_2d_data([time_power_mm' spectral_power'],xedges, yedges);
@@ -89,4 +94,44 @@ function []  = plot_power_diff( data, t_res )
 	plot(xedges,yedges,'r');
 	title('Scatter of power in time and spectral domains');
 	
+	% do rescaled here: check power is same when changing units (it really should be!)
+	if do_rescaled
+		% mHz for freq and (nT)^2 / mHz for PSD
+		
+		
+		% use fn to do it
+		scaled_data = rescale_power(data);
+		
+		% get area under curve
+		scaled_spectral_power = trapz(scaled_data(1).freqs,cell2mat({scaled_data.(sprintf('%sps',coord))}));
+		
+		xedges = logspace(-1,6,200);
+		yedges = xedges;
+		
+		figure(4);
+		n = bin_2d_data([time_power_mm' scaled_spectral_power'],xedges, yedges);
+		n(end+1,:) = 0; n(:,end+1) = 0;
+		
+		[xb,yb] = meshgrid(xedges,yedges);
+		
+		h = pcolor(xb,yb, n');
+		cmap = colormap;
+		cmap(1,:) = [1 1 1];
+		colormap(cmap);
+		shading flat;
+		
+		tc = colorbar;
+		title(tc,'counts in bin');
+		
+		set(gca,'yscale','log');
+		set(gca,'xscale','log');
+		
+		xlabel('Energy in time domain');
+		ylabel('Energy in spectral domain');
+		
+		hold on;
+		plot(xedges,yedges,'r');
+		legend('y=x');
+		title('Power in time and spectral domains using different units');
+	end
 end	
