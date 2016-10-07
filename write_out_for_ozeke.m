@@ -18,7 +18,7 @@ function [] = write_out_for_ozeke( data_dir, loc_dir,years)
 	
 	gopts = make_basic_struct('get_opts');
 	
-	add_extras = make_basic_struct('add_omni_extras');
+	%add_extras = make_basic_struct('add_omni_extras');
 	%add_extras.L = true;
 	%add_extras.MLT_val = true;
 	
@@ -35,6 +35,7 @@ function [] = write_out_for_ozeke( data_dir, loc_dir,years)
 	for year = years
 		
 		data = [];
+		this_data = [];
 		all_station_data = [];
 		
 		for s_count = 1:length(stations)
@@ -43,14 +44,18 @@ function [] = write_out_for_ozeke( data_dir, loc_dir,years)
 			gopts.y = year;
 			gopts.m = months;
 			
-			data(1).(station) = get_all_psd_data(data_dir,gopts,add_extras);
+			% get the data
+			this_data = get_all_psd_data(data_dir,gopts);
+			
+			% rescale into mHz and (nT)^2/mHz
+			data(1).(station) = rescale_power(this_data);
 			
 			if length( data(1).(station) ) == 0
 				error('write_out_for_ozeke:NoData','no data found');
 			end
 			
-			% get all the dates and turn them into datetimes so we can use isbetween
-			making_dt = datetime(datevec(cell2mat({data.(station).dates})));
+			% get all the ORIGINAL dates and turn them into datetimes so we can use isbetween
+			making_dt = datetime(datevec(cell2mat({data.(station).orig_dates})));
 			making_dt = num2cell(making_dt);
 			[data.(station).dates_dt] = making_dt{:};
 			
@@ -60,8 +65,8 @@ function [] = write_out_for_ozeke( data_dir, loc_dir,years)
 			
 		end
 		
-		
-		freqs = 1e3*data.GILL(1).freqs;
+		% expect these to be in mHz
+		freqs = data.GILL(1).freqs;
 		flims = [0.1,15];
 		
 		use_freqs = freqs >= flims(1) & freqs <= flims(2);
@@ -137,7 +142,7 @@ function [] = write_out_for_ozeke( data_dir, loc_dir,years)
 								% put hte data in
 								any_data = true;
 								
-								cell_to_write = [cell_to_write_start num2cell( 1e-3*data.(station)(this_data).(sprintf('%sps',coord))(use_freqs))']; %factor of 1e-3 to convert units
+								cell_to_write = [cell_to_write_start num2cell( data.(station)(this_data).(sprintf('%sps',coord))(use_freqs))']; %factor of 1e-3 to convert units
 								fprintf(fileID,formatSpec,cell_to_write{:});
 								
 						
