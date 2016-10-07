@@ -1,20 +1,38 @@
 % You can use for anything, doens't need to be speed
 % returns the quantile values ("speed_quants") and the quantile each data lies in ("whihc_qwuant")
+% You can sort into quantiles or into lin/log space using min, max and num_quants
 
-function [speed_quants,which_quant] = sort_by_speed_sectors(data,num_quants)
+function [speed_quants,which_quant] = sort_by_speed_sectors(data,num_quants,opts)
 
 	ptag = get_ptag();
 	do_print(ptag,2,'sort_by_speed_sectors: entering function\n');
 
 	
+	% input checks
+	% Data
 	if length(size(data)) ~=2
 		error('sort_by_speed_sectors:BadInputSize');
 	elseif sum(size(data)) == 0
 		error('sort_by_speed_sectors:BadInput',' no data sent in');
 	end
+	% Options
+	if nargin == 2
+		opts = 'quantile';
+	elseif ~strcmp(opts,'lin') & ~strcmp(opts,'log') & ~strcmp(opts,'quantile')
+		error('sort_by_speed_sectors:BadInput',' incompatible option for sorting bins');
+	end
 
 	% find quantiles
-	speed_quants = quantile(data,num_quants);
+	switch opts
+		case 'quantile'
+			speed_quants = quantile(data,num_quants);
+		case 'lin'
+			speed_quants = linspace(min(data),max(data),num_quants);
+			do_print(ptag,2,'sort_by_speed_sectors: Using linspace instead of quantile stuff');
+		case 'log'
+			speed_quants = logspace(log10(min(data)),log10(max(data)),num_quants);
+			do_print(ptag,2,'sort_by_speed_sectors: Using logspace instead of quantile stuff');
+	end
 	
 	% edges of "quantile bins"
 	all_speed_quants = [min(data), speed_quants, max(data)];
@@ -40,17 +58,26 @@ function [speed_quants,which_quant] = sort_by_speed_sectors(data,num_quants)
 		which_quant(in_this) = sector;
 	end
 	
-	% and check we got them all 
-	if sum(isnan(which_quant)) > 0
-		warning('sort_by_speed_sectors:BadSorting','some data not labelled as a sector');
-	end
+	% and check we got them all. Warning/error dep on sorting type
+	switch opts
+		case 'quantile'
+			if sum(isnan(which_quant)) > 0
+				warning('sort_by_speed_sectors:BadSorting','some data not labelled as a sector');
+			end
 	
-	% check we got right amount within each 
-	for c_count = 1:num_quants+1
-		if abs( sum(which_quant==c_count) - ceil(length(data)/(num_quants+1) ) ) > 1
-			warning('sort_by_speed_sectors:PoorQuantileSorting','not the same amount in each quantile!');
-		end
+			% check we got right amount within each 
+			for c_count = 1:num_quants+1
+				if abs( sum(which_quant==c_count) - ceil(length(data)/(num_quants+1) ) ) > 1
+					warning('sort_by_speed_sectors:PoorQuantileSorting','not the same amount in each quantile!');
+				end
+			end
+		
+		case {'lin','log'}
+			if sum(isnan(which_quant)) > 0
+				error('sort_by_speed_sectors:BadSorting','some data not labelled as a sector');
+			end
 	end
+			
 	
 end
 	

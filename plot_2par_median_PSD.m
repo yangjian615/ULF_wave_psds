@@ -1,18 +1,41 @@
 % Takes 2 parameters, takes as many quantiles of each and plots the median PSD at the given frequency
 % par1,2 should be string s of field, numq1,2, integers adn whichfreq in mHz
+% num_conts is optional argument, just an integer please
+% par_opts also optional, you can specify lin or log for different sorting inside sort_by_speed_sectors, expect a cell of two strings
 
-function [res,min_in_med] = plot_2par_median_PSD( data, par1, par2, numq1,numq2, whichfreq, extra,num_conts )
+function [res,min_in_med] = plot_2par_median_PSD( data, par1, par2, nbins, whichfreq, num_conts, par_opts )
 
 	coord = 'x'; % youll want to feed this in a t some point
-	use_quantile_ticks = true;%false;
+	use_quantile_ticks = false;
 	
 	ptag = get_ptag();
 	do_print(ptag,2,'plot_2par_median_PSD:entering fn \n');
 
 	do_print(ptag,3,sprintf('plot_2par_median_PSD:plotting at freq %d \n',whichfreq));
 	
+	% Sort out inputs
+	numq1 = nbins(1);
+	numq2 = nbins(2);
+	use_par_opts = false;
+	switch nargin
+		case 5
+			num_conts = [];
+		case 7 % have par_opts, check them
+			use_par_opts = true;
+			if ~iscell(par_opts)
+				error('plot_2par_median_PSD:BadInput',' non-cell input given for par_otps');
+			elseif length(par_opts) ~= 2
+				error('plot_2par_median_PSD:BadInput',' need 2 inputs in par_otps cell');
+			elseif ~isstr(par_opts{1}) | ~isstr(par_opts{2})
+				error('plot_2par_median_PSD:BadInput',' non-string inside par_otps cell');
+			end
+	end
+			
+			
+	
+	
 	% first get the frequency
-	freqs = data(1).freqs*1e3;
+	freqs = data(1).freqs;
 	
 	if isempty(whichfreq)
 		error('plot_2par_median_PSD:NoInput','need a frequency to plot at');
@@ -46,8 +69,13 @@ function [res,min_in_med] = plot_2par_median_PSD( data, par1, par2, numq1,numq2,
 	data = data(ok_vals);
 	
 	% get lists of which  quantile data lies in for each par
-	[quants1,which_q1] = sort_by_speed_sectors(cell2mat({data.(par1)}),numq1);
-	[quants2,which_q2] = sort_by_speed_sectors(cell2mat({data.(par2)}),numq2);
+	if use_par_opts
+		[quants1,which_q1] = sort_by_speed_sectors(cell2mat({data.(par1)}),numq1,par_opts{1});
+		[quants2,which_q2] = sort_by_speed_sectors(cell2mat({data.(par2)}),numq2,par_opts{2});
+	else
+		[quants1,which_q1] = sort_by_speed_sectors(cell2mat({data.(par1)}),numq1);
+		[quants2,which_q2] = sort_by_speed_sectors(cell2mat({data.(par2)}),numq2);
+	end
 	
 	% check you have good quantiles
 	if length(unique(quants1)) ~= length(quants1) | length(unique(quants2)) ~= length(quants2) 
@@ -64,22 +92,28 @@ function [res,min_in_med] = plot_2par_median_PSD( data, par1, par2, numq1,numq2,
 		% get the bin centres
 		bin_centres1(q1) = median( cell2mat({data( which_q1 == q1 ).(par1)}) );
 		
+		if isnan(bin_centres1(q1))
+			bin_centres1(q1) = quants1(q1);
+		end
+		
 	
 		for q2 = 1:numq2+1
 			
 			% get the bin centres
 			if q1 == 1
 				bin_centres2(q2) = median( cell2mat({data( which_q2 == q2 ).(par2)}) );
+				
+				
+			if isnan(bin_centres2(q2))
+				bin_centres2(q2) = quants2(q2);
+			end
+				
 			end
 			
-			%data_selection(2).which_quants = q2;
 			
-			%get data selected
-			% you may need to speed this up by getting indices instead of passing out stuff
-			% this is so slow as it recalculates EVERY time. Surely you only need to do once? Different function?
-			%selected_data = select_quantiles(data,data_selection);
 			
 			in_both = which_q1 == q1 & which_q2==q2;
+			
 			
 			if sum(in_both) > 0
 				selected_data = data( in_both );
@@ -102,6 +136,7 @@ function [res,min_in_med] = plot_2par_median_PSD( data, par1, par2, numq1,numq2,
 				res(q1,q2) = median(all_pow);
 				tot(q1,q2) = length(all_pow);%/res(q1,q2);
 				extras(q1,q2) = median(extra_info);
+				
 			else 
 				do_print(ptag,2,sprintf('plot_2par_median_PSD: No data for case of quantiles %d, %d \n',q1,q2'));
 				res(q1,q2) = 0;
@@ -116,17 +151,14 @@ function [res,min_in_med] = plot_2par_median_PSD( data, par1, par2, numq1,numq2,
 
 	
 	% check output
-	if sum(sum(isnan(res))) > 0  | sum(isnan(bin_centres1)) > 0 | sum(isnan(bin_centres2)) > 0
-		error('plot_2par_median_PSD:BadResult','got nans still');
+	if sum(sum(sum(isnan(res)))) > 0 
+		error('plot_2par_median_PSD:BadResult','got nans still, in res'); 
+	elseif sum(isnan(bin_centres1)) > 0
+		error('plot_2par_median_PSD:BadResult','got nans still, in bincentres 1');
+	elseif sum(isnan(bin_centres2)) > 0 
+		error('plot_2par_median_PSD:BadResult','got nans still, in bincentres 2');
 	end
 	
-	
-	% get blank space for zero values
-	cmap = colormap;
-	if min(min(res)) == 0 
-		cmap(1,:) = [1 1 1];
-	end
-	colormap(cmap);	% how much are we cutting out??
 	
 	if use_quantile_ticks
 		x_axis = 1:numq2+1; y_axis = 1:numq1+1; % by quantile number
@@ -138,22 +170,27 @@ function [res,min_in_med] = plot_2par_median_PSD( data, par1, par2, numq1,numq2,
 	%plot it. Use log to mess with colorbar
 	[xb,yb] = meshgrid(x_axis,y_axis); 
 	
+	% deal with zeroes in res for log
+	log_res = res;
+	log_res( res ~= 0 ) = log(res( res~= 0 ));
+	
 	
 	% two loops one for pcolor and conotour, one for whatever you want?
 	for f_count = 1:3
 		figure(f_count);
 		if f_count ==1 
-			h = pcolor(xb,yb,log(res));
+			h = pcolor(xb,yb,log_res);
 			shading flat
 			%shading interp;% grid on;
 			hold on;
 			%grid on; set(gca,'layer','top');
 			if isempty(num_conts)
-				contour(x_axis,y_axis,log(res),'k');	
+				contour(x_axis,y_axis,log_res,'k');	
 			else
-				contour(x_axis,y_axis,log(res),num_conts,'k');
+				contour(x_axis,y_axis,log_res,num_conts,'k');
 			end
 			
+			make_cmap_lowest_white();
 			tc = colorbar;
 			logscale_colorbar(tc);
 			title(tc,'Median PSD');
@@ -167,12 +204,16 @@ function [res,min_in_med] = plot_2par_median_PSD( data, par1, par2, numq1,numq2,
 			shading interp;%flat; 
 			hold on;
 			contour(x_axis,y_axis,extras,'k');
+
+			make_cmap_lowest_white();
 			tc2 = colorbar;
 			%logscale_colorbar(tc2);
 			title(tc2,'speed');
 		elseif f_count == 3
 			h3 = pcolor(xb,yb,tot);
 			%shading flat;
+			
+			make_cmap_lowest_white();
 			tc3 = colorbar;
 			title(tc3,'count in bin');
 			
@@ -221,11 +262,7 @@ function [res,min_in_med] = plot_2par_median_PSD( data, par1, par2, numq1,numq2,
 		end
 		
 		figdirdate = '16-10-03';
-		if isempty(extra)
-			figtitle = sprintf('plots/%s_2par_plots/%s_%s_%d',figdirdate,par1,par2,f_count);
-		else
-			figtitle = strcat(sprintf('plots/%s_2par_plots/%s_%s_%d',figdirdate,par1,par2,f_count),extra);
-		end
+		figtitle = sprintf('plots/%s_2par_plots/%s_%s_%d',figdirdate,par1,par2,f_count);
 		
 		saveas(gcf,strcat(figtitle,'.jpg'));
 	end
