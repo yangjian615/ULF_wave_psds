@@ -1,9 +1,11 @@
 % Takes 2 parameters, takes as many quantiles of each and plots the median PSD at the given frequency
 % par1,2 should be string s of field, numq1,2, integers adn whichfreq in mHz
-% num_conts is optional argument, just an integer please
-% par_opts also optional, you can specify lin or log for different sorting inside sort_by_speed_sectors, expect a cell of two strings
+% num_conts: is optional argument, just an integer please
+% par_opts: also optional, you can specify lin or log for different sorting inside sort_by_speed_sectors, expect a cell of two strings
+% par_lims: you can apply limits to your parameters by supply a 4-vec in par_lims, [lowllim1,hilim1,lolim2,hilim2];
+%  	this is last as it's only really useful when specifyinglin/log vluueas
 
-function [res,min_in_med] = plot_2par_median_PSD( data, par1, par2, nbins, whichfreq, num_conts, par_opts )
+function [res,min_in_med] = plot_2par_median_PSD( data, par1, par2, nbins, whichfreq, num_conts, par_opts, par_lims )
 
 	coord = 'x'; % youll want to feed this in a t some point
 	use_quantile_ticks = false;
@@ -17,22 +19,51 @@ function [res,min_in_med] = plot_2par_median_PSD( data, par1, par2, nbins, which
 	numq1 = nbins(1);
 	numq2 = nbins(2);
 	use_par_opts = false;
-	switch nargin
-		case 5
-			num_conts = [];
-		case 7 % have par_opts, check them
-			use_par_opts = true;
-			if ~iscell(par_opts)
-				error('plot_2par_median_PSD:BadInput',' non-cell input given for par_otps');
-			elseif length(par_opts) ~= 2
-				error('plot_2par_median_PSD:BadInput',' need 2 inputs in par_otps cell');
-			elseif ~isstr(par_opts{1}) | ~isstr(par_opts{2})
-				error('plot_2par_median_PSD:BadInput',' non-string inside par_otps cell');
-			end
+	if nargin == 5
+		num_conts = [];
+	end
+	% check par_opts if given
+	if nargin > 6 & ~isempty(par_opts)
+		use_par_opts = true;
+		if ~iscell(par_opts)
+			error('plot_2par_median_PSD:BadInput',' non-cell input given for par_otps');
+		elseif length(par_opts) ~= 2
+			error('plot_2par_median_PSD:BadInput',' need 2 inputs in par_otps cell');
+		elseif ~isstr(par_opts{1}) | ~isstr(par_opts{2})
+			error('plot_2par_median_PSD:BadInput',' non-string inside par_otps cell');
+		end
+	end
+	% apply par_lims if given
+	if nargin > 7 & ~isempty(par_lims)
+	%This shouldnt really be here as you are doing processing rather than settin gup, but oh well.
+		do_print(ptag,2,'plot_2par_median_PSD: removing data outside requested limits \n');
+		par1s = cell2mat({data.(par1)});
+		ok1 = par1s >= par_lims(1) & par1s <= par_lims(2);
+		
+		par2s = cell2mat({data.(par2)});
+		ok2 = par2s >= par_lims(3) & par2s <= par_lims(4);
+		
+		data = data(ok1&ok2);
 	end
 			
 			
+			
+	% also get rid of any nans if they exist
+	par1s = cell2mat({data.(par1)});
+	ok1 = ~isnan(par1s);
+		
+	par2s = cell2mat({data.(par2)});
+	ok2 = ~isnan(par2s);
 	
+	if sum(isnan(par1s)) > 0 
+		do_print(ptag,2,'plot_2par_median_PSD: removing par1 data that are nans \n');
+	end
+	if sum(isnan(par2s)) > 0 
+		do_print(ptag,2,'plot_2par_median_PSD: removing par2 data that are nans \n');
+	end
+	data = data(ok1&ok2);
+	
+
 	
 	% first get the frequency
 	freqs = data(1).freqs;
@@ -47,19 +78,13 @@ function [res,min_in_med] = plot_2par_median_PSD( data, par1, par2, nbins, which
 	which_col = abs(whichfreq - freqs) < f_tol;
 	% would be quicker to use this to eliminate data first but too complciated
 
-	% make selection strcut 
-	data_selection = [];
-	data_selection(1).o_f = par1;
-	data_selection(2).o_f = par2;
-	data_selection(1).num_quants = numq1; 
-	data_selection(2).num_quants = numq2;
 	
 	% initialise results matrix
-	res  = nan(numq1+1,numq2+1);
-	tot = nan(numq1+1,numq2+1); % so we know amount used
-	extras = nan(numq1+1,numq2+1); % if you want to display mdeina speed etc
-	bin_centres1 = nan(1,length(numq1+1));
-	bin_centres2 = nan(1,length(numq2+1));
+	res  = nan(numq1,numq2);
+	tot = nan(numq1,numq2); % so we know amount used
+	extras = nan(numq1,numq2); % if you want to display mdeina speed etc
+	bin_centres1 = nan(1,length(numq1));
+	bin_centres2 = nan(1,length(numq2));
 	
 	% remove data wtith unphyscial PSD values, same as whebn using wrapper fns. Use default values, don't bother to hand in.
 	temp_gopts =make_basic_struct('gen_opts');
@@ -68,13 +93,19 @@ function [res,min_in_med] = plot_2par_median_PSD( data, par1, par2, nbins, which
 	ok_vals = (power >= temp_gopts.pop_lim(1)) & (power < temp_gopts.pop_lim(2));
 	data = data(ok_vals);
 	
-	% get lists of which  quantile data lies in for each par
+	% get lists of which  quantile data lies in for each part
+	% these must match, therefore they need min and max values too.
 	if use_par_opts
-		[quants1,which_q1] = sort_by_speed_sectors(cell2mat({data.(par1)}),numq1,par_opts{1});
-		[quants2,which_q2] = sort_by_speed_sectors(cell2mat({data.(par2)}),numq2,par_opts{2});
+		[quants1,which_q1] = sort_by_speed_sectors(cell2mat({data.(par1)}),numq1+2,par_opts{1});
+		[quants2,which_q2] = sort_by_speed_sectors(cell2mat({data.(par2)}),numq2+2,par_opts{2});
 	else
-		[quants1,which_q1] = sort_by_speed_sectors(cell2mat({data.(par1)}),numq1);
-		[quants2,which_q2] = sort_by_speed_sectors(cell2mat({data.(par2)}),numq2);
+		par1s = cell2mat({data.(par1)});
+		par2s = cell2mat({data.(par2)});
+		[quants1,which_q1] = sort_by_speed_sectors(par1s,numq1);
+		[quants2,which_q2] = sort_by_speed_sectors(par2s,numq2);
+		
+		quants1 = cat(2,min(par1s),quants1,max(par1s));
+		quants2 = cat(2,min(par2s),quants2,max(par2s));
 	end
 	
 	% check you have good quantiles
@@ -82,30 +113,30 @@ function [res,min_in_med] = plot_2par_median_PSD( data, par1, par2, nbins, which
 		error('plot_2par_median_PSD:BadQuantilesFound',' non-unique quantiles, may be due to structure of data, esp if OMNI');
 	end
 	
-	
+
 	% keep track of minimum used to calculate median [q1,q2,num_in_med]
 	min_in_med = [1,1,length(data)];
 	
-	for q1 = 1:numq1+1
+	for q1 = 1:numq1
 		
 		%data_selection(1).which_quants = q1;
 		% get the bin centres
 		bin_centres1(q1) = median( cell2mat({data( which_q1 == q1 ).(par1)}) );
 		
 		if isnan(bin_centres1(q1))
-			bin_centres1(q1) = quants1(q1);
+			bin_centres1(q1) = mean( [quants1(q1),quants1(q1+1)] );
 		end
-		
+		% you need to make them take mean instead i think.
 	
-		for q2 = 1:numq2+1
-			
+		for q2 = 1:numq2
 			% get the bin centres
 			if q1 == 1
 				bin_centres2(q2) = median( cell2mat({data( which_q2 == q2 ).(par2)}) );
 				
 				
 			if isnan(bin_centres2(q2))
-				bin_centres2(q2) = quants2(q2);
+				disp(q2);
+				bin_centres2(q2) = mean( [quants2(q2),quants2(q2+1)] );
 			end
 				
 			end
@@ -138,7 +169,7 @@ function [res,min_in_med] = plot_2par_median_PSD( data, par1, par2, nbins, which
 				extras(q1,q2) = median(extra_info);
 				
 			else 
-				do_print(ptag,2,sprintf('plot_2par_median_PSD: No data for case of quantiles %d, %d \n',q1,q2'));
+				do_print(ptag,3,sprintf('plot_2par_median_PSD: No data for case of quantiles %d, %d \n',q1,q2'));
 				res(q1,q2) = 0;
 				tot(q1,q2) = 0;
 				extras(q1,q2) = 0;
@@ -174,6 +205,17 @@ function [res,min_in_med] = plot_2par_median_PSD( data, par1, par2, nbins, which
 	log_res = res;
 	log_res( res ~= 0 ) = log(res( res~= 0 ));
 	
+	% check your axes are increasing
+	if sum( (x_axis(2:end) - x_axis(1:end-1)) <= 0 ) > 0
+		disp(x_axis);
+		error('plot_2par_median_PSD: not monotonically increasing x axis wont work');
+	end
+	if sum( (y_axis(2:end) - y_axis(1:end-1)) <= 0 ) > 0
+		disp(y_axis);
+		error('plot_2par_median_PSD: not monotonically increasing y axis wont work');
+	end
+
+
 	
 	% two loops one for pcolor and conotour, one for whatever you want?
 	for f_count = 1:3
@@ -181,7 +223,12 @@ function [res,min_in_med] = plot_2par_median_PSD( data, par1, par2, nbins, which
 		if f_count ==1 
 			h = pcolor(xb,yb,log_res);
 			shading flat
-			%shading interp;% grid on;
+			
+			% you can use nicer shadin with consistent bin sizes
+			if use_par_opts & ~strcmp(par_opts{1},'quantile') & ~strcmp(par_opts{2},'quantile')
+				shading interp;% grid on;
+			end
+			
 			hold on;
 			%grid on; set(gca,'layer','top');
 			if isempty(num_conts)
@@ -264,7 +311,7 @@ function [res,min_in_med] = plot_2par_median_PSD( data, par1, par2, nbins, which
 		figdirdate = '16-10-03';
 		figtitle = sprintf('plots/%s_2par_plots/%s_%s_%d',figdirdate,par1,par2,f_count);
 		
-		saveas(gcf,strcat(figtitle,'.jpg'));
+		%saveas(gcf,strcat(figtitle,'.jpg'));
 	end
 		
 	

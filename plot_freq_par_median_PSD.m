@@ -1,5 +1,6 @@
 % Takes 2 parameters, takes as many quantiles of each and plots the median PSD at the given frequency
 % par1,2 should be string s of field, numq1,2, integers adn whichfreq in mHz
+% numq2 is number of bions to sort into whether using quatnile or linspace methods
 
 function [res] = plot_freq_par_median_PSD( data, par2, numq2, num_conts, freq_lim, extra )
 
@@ -12,11 +13,11 @@ function [res] = plot_freq_par_median_PSD( data, par2, numq2, num_conts, freq_li
 	
 	
 	% first get the frequency
-	freqs = data(1).freqs*1e3;
+	freqs = data(1).freqs;%*1e3;
 	
 	% only use freqs larger than 1mHz
 	if isempty(freq_lim)
-		freq_lim = [1,15];
+		freq_lim = [1,15]*1e-3;
 	end
 		
 	use_freqs = freqs >= freq_lim(1) & freqs <= freq_lim(2);
@@ -30,10 +31,10 @@ function [res] = plot_freq_par_median_PSD( data, par2, numq2, num_conts, freq_li
 	data_selection(1).num_quants = numq2; 
 	
 	% initialise results matrix
-	res  = nan(length(freqs),numq2+1);
-	tot = nan(length(freqs),numq2+1); % so we know amount used
-	extras = nan(length(freqs),numq2+1);
-	bin_centres2 = nan(1,length(numq2+1));
+	res  = nan(length(freqs),numq2);
+	tot = nan(length(freqs),numq2); % so we know amount used
+	extras = nan(length(freqs),numq2);
+	bin_centres2 = nan(1,length(numq2));
 	
 	% remove data wtith unphyscial PSD values, same as whebn using wrapper fns. Use default values, don't bother to hand in.
 	temp_gopts =make_basic_struct('gen_opts');
@@ -44,7 +45,7 @@ function [res] = plot_freq_par_median_PSD( data, par2, numq2, num_conts, freq_li
 	
 
 	
-	for q2 = 1:numq2+1
+	for q2 = 1:numq2
 		
 		
 		%get data selected
@@ -54,6 +55,10 @@ function [res] = plot_freq_par_median_PSD( data, par2, numq2, num_conts, freq_li
 		
 		in_q = which_q2==q2;
 		bin_centres2(q2) = median( cell2mat({data( which_q2 == q2 ).(par2)}) );
+		
+		if isnan(bin_centres2(q2))
+			bin_centres2(q2) = mean( [quants2(q2),quants2(q2+1)] );
+		end
 		
 		if sum(in_q) > 0
 			selected_data = data( in_q );
@@ -67,7 +72,7 @@ function [res] = plot_freq_par_median_PSD( data, par2, numq2, num_conts, freq_li
 			extras(:,q2) = median( cell2mat({selected_data.speed}) );
 			res(:,q2) = median(all_pow,2);
 		else 
-			do_print(ptag,2,sprintf('plot_freq_par_median_PSD: No data for case of quantiles %d, %d \n',q1,q2'));
+			do_print(ptag,2,sprintf('plot_freq_par_median_PSD: No data for case of bin number %d \n',q2));
 			res(:,q2) = 0;
 		end
 		
@@ -75,8 +80,10 @@ function [res] = plot_freq_par_median_PSD( data, par2, numq2, num_conts, freq_li
 	end
 	
 	% check output
-	if sum(sum(isnan(res))) > 0  | sum(isnan(bin_centres2)) > 0
-		error('plot_freq_par_median_PSD:BadResult','got nans still1');
+	if sum(sum(isnan(res))) > 0  
+		error('plot_freq_par_median_PSD:BadResult','got nans still1 in output');
+	elseif sum(isnan(bin_centres2)) > 0
+		error('plot_freq_par_median_PSD:BadResult','got nans still in bin centres');
 	end
 	
 	
@@ -158,14 +165,14 @@ function [res] = plot_freq_par_median_PSD( data, par2, numq2, num_conts, freq_li
 			title(sprintf('corresponding speed median of %s',par2));
 		end
 		
-		figdirdate = '16-09-29';
-		if isempty(extra)
-			figtitle = sprintf('plots/%s_freq_par_plots/%s_%d',figdirdate,par2,f_count);
-		else
-			figtitle = strcat(sprintf('plots/%s_freq_par_plots/%s_%s_%d',figdirdate,par1,par2,f_count),extra);
-		end
+		% figdirdate = '16-09-29';
+		% if isempty(extra)
+			% figtitle = sprintf('plots/%s_freq_par_plots/%s_%d',figdirdate,par2,f_count);
+		% else
+			% figtitle = strcat(sprintf('plots/%s_freq_par_plots/%s_%s_%d',figdirdate,par1,par2,f_count),extra);
+		% end
 		
-		savefig(figtitle);
+		% savefig(figtitle);
 	end
 		
 	
