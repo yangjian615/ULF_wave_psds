@@ -2,6 +2,7 @@
 % returns the quantile values ("speed_quants") and the quantile each data lies in ("whihc_qwuant")
 % You can sort into quantiles or into lin/log space using min, max and num_quants
 % num_quants giove you the final number of bins, no mattter the method
+%of speed_quants, first will be min and last will be max
 
 function [speed_quants,which_quant] = sort_by_speed_sectors(data,num_quants,opts)
 
@@ -29,7 +30,8 @@ function [speed_quants,which_quant] = sort_by_speed_sectors(data,num_quants,opts
 	switch opts
 		case 'quantile'
 			speed_quants = quantile(data,num_quants-1);
-			speed_quants = cat(2,min(data),speed_quants,max_data);
+			speed_quants = cat(2,min(data),speed_quants,max(data));
+			do_print(ptag,3,'sort_by_speed_sectors: Sorted using quantiles \n');
 		case 'lin'
 			speed_quants = linspace(min(data),max(data),num_quants+1);
 			do_print(ptag,3,'sort_by_speed_sectors: Using linspace instead of quantile stuff \n');
