@@ -40,6 +40,17 @@ function [speed_quants,which_quant] = sort_by_speed_sectors(data,num_quants,opts
 			do_print(ptag,3,'sort_by_speed_sectors: Using logspace instead of quantile stuff \n');
 	end
 	
+	% check the min and max are right - replace
+	if speed_quants(1) > min(data)
+		do_print(ptag,2,'sort_by_speed_sectors: replacing firrst bin edge with minimum \n');
+		speed_quants(1) = min(data);
+	end
+	if speed_quants(end) < max(data)
+		do_print(ptag,2,'sort_by_speed_sectors: replacing last bin edge with data masx  \n');
+		speed_quants(end) = max(data);
+	end
+	
+	
 	% % edges of "quantile bins"
 	% all_speed_quants = [min(data), speed_quants, max(data)];
 	% do_print(ptag,4,sprintf('sort_by_speed_sectors: have %d edges of quantile bins, hence %d bins \n',length(all_speed_quants),length(all_speed_quants)+1));
@@ -78,7 +89,6 @@ function [speed_quants,which_quant] = sort_by_speed_sectors(data,num_quants,opts
 		
 		case {'lin','log'}
 			if sum(isnan(which_quant)) > 0
-				disp(data(isnan(which_quant)));
 				error('sort_by_speed_sectors:BadSorting','some data not labelled as a sector');
 			end
 	end
